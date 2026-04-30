@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Building2, Map, Trophy, Calculator, LogOut, ArrowLeft, ChevronDown } from 'lucide-react'
+import { Building2, Map, Trophy, Calculator, LogOut, ArrowLeft, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -60,12 +60,14 @@ export function Navbar({ title, showBack, backHref, branchName, subtitle }: Navb
       <div className="border-t border-mandiri-600">
         <div className="max-w-6xl mx-auto px-4 flex">
           {[
-            { href: '/select-branch', icon: Building2, label: 'Cabang' },
-            { href: '#map',           icon: Map,       label: 'Peta' },
-            { href: '/leaderboard',   icon: Trophy,    label: 'Ranking' },
+            { href: '/select-branch', icon: Building2,  label: 'Cabang' },
+            { href: '/leaderboard',   icon: Trophy,     label: 'Ranking' },
             { href: '/calculator',    icon: Calculator, label: 'Kalkulator' },
+            ...(session?.user?.role === 'ADMIN'
+              ? [{ href: '/admin', icon: ShieldCheck, label: 'Admin' }]
+              : []),
           ].map(item => {
-            const active = pathname.startsWith(item.href) && item.href !== '#map'
+            const active = pathname.startsWith(item.href)
             return (
               <Link
                 key={item.href}
