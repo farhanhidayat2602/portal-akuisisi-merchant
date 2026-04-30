@@ -77,25 +77,25 @@ function CalculatorContent() {
   const [qrisPct, setQrisPct] = useState(40)   // % going to QRIS (auto: 100-edcPct)
 
   // EDC sub-splits
-  const [onUsPct, setOnUsPct] = useState(40)     // % of EDC that is On-Us
-  const [debitOnUsPct, setDebitOnUsPct] = useState(70)   // % of On-Us that is Debit
-  const [debitOffUsPct, setDebitOffUsPct] = useState(60) // % of Off-Us that is Debit
+  const [debitPct, setDebitPct]           = useState(70) // % of EDC that is Debit
+  const [debitOnUsPct, setDebitOnUsPct]   = useState(50) // % of Debit that is On-Us
+  const [kreditOnUsPct, setKreditOnUsPct] = useState(40) // % of Kredit that is On-Us
 
   const vol = parseFloat(totalVolume) || 0
 
   const result = useMemo(() => {
-    const edcVol    = vol * (edcPct / 100)
-    const qrisVol   = vol * ((100 - edcPct) / 100)
-    const onUsVol   = edcVol * (onUsPct / 100)
-    const offUsVol  = edcVol * ((100 - onUsPct) / 100)
+    const edcVol     = vol * (edcPct / 100)
+    const qrisVol    = vol * ((100 - edcPct) / 100)
+    const debitVol   = edcVol * (debitPct / 100)
+    const kreditVol  = edcVol * ((100 - debitPct) / 100)
 
-    const edcOnUsDebit   = onUsVol * (debitOnUsPct / 100)
-    const edcOnUsCredit  = onUsVol * ((100 - debitOnUsPct) / 100)
-    const edcOffUsDebit  = offUsVol * (debitOffUsPct / 100)
-    const edcOffUsCredit = offUsVol * ((100 - debitOffUsPct) / 100)
+    const edcOnUsDebit   = debitVol  * (debitOnUsPct / 100)
+    const edcOffUsDebit  = debitVol  * ((100 - debitOnUsPct) / 100)
+    const edcOnUsCredit  = kreditVol * (kreditOnUsPct / 100)
+    const edcOffUsCredit = kreditVol * ((100 - kreditOnUsPct) / 100)
 
     return calculateFee(edcOnUsDebit, edcOnUsCredit, edcOffUsDebit, edcOffUsCredit, qrisVol)
-  }, [vol, edcPct, onUsPct, debitOnUsPct, debitOffUsPct])
+  }, [vol, edcPct, debitPct, debitOnUsPct, kreditOnUsPct])
 
   const pieData = [
     { name: 'EDC Debit On-Us (0.15%)',  value: result.edcOnUsDebitFee  },
@@ -180,25 +180,66 @@ function CalculatorContent() {
               <div className="w-6 h-6 bg-mandiri-700 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">3</div>
               <h3 className="font-bold text-slate-800">Detail Breakdown EDC</h3>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Debit vs Kredit split */}
               <SliderInput
-                label={`On-Us (Kartu Mandiri): ${onUsPct}% | Off-Us (Bank Lain): ${100 - onUsPct}%`}
-                value={onUsPct}
-                onChange={v => setOnUsPct(v)}
+                label={`Kartu Debit: ${debitPct}% | Kartu Kredit: ${100 - debitPct}%`}
+                value={debitPct}
+                onChange={v => setDebitPct(v)}
               />
-              {onUsPct > 0 && (
-                <SliderInput
-                  label={`On-Us Debit: ${debitOnUsPct}% | On-Us Kredit: ${100 - debitOnUsPct}%`}
-                  value={debitOnUsPct}
-                  onChange={v => setDebitOnUsPct(v)}
-                />
+
+              {/* Debit section */}
+              {debitPct > 0 && (
+                <div className="bg-mandiri-50 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard size={13} className="text-mandiri-700" />
+                    <p className="text-xs font-bold text-mandiri-700">
+                      Kartu Debit — {formatRupiah(vol * edcPct / 100 * debitPct / 100)}
+                    </p>
+                  </div>
+                  <SliderInput
+                    label={`On-Us (Kartu Mandiri): ${debitOnUsPct}% | Off-Us (Bank Lain): ${100 - debitOnUsPct}%`}
+                    value={debitOnUsPct}
+                    onChange={v => setDebitOnUsPct(v)}
+                  />
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white rounded-lg p-2 text-center">
+                      <p className="text-slate-500">On-Us Debit <span className="text-mandiri-600">(0.15%)</span></p>
+                      <p className="font-bold text-mandiri-700">{formatRupiah(vol * edcPct/100 * debitPct/100 * debitOnUsPct/100)}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 text-center">
+                      <p className="text-slate-500">Off-Us Debit <span className="text-mandiri-600">(1.00%)</span></p>
+                      <p className="font-bold text-mandiri-700">{formatRupiah(vol * edcPct/100 * debitPct/100 * (100-debitOnUsPct)/100)}</p>
+                    </div>
+                  </div>
+                </div>
               )}
-              {onUsPct < 100 && (
-                <SliderInput
-                  label={`Off-Us Debit: ${debitOffUsPct}% | Off-Us Kredit: ${100 - debitOffUsPct}%`}
-                  value={debitOffUsPct}
-                  onChange={v => setDebitOffUsPct(v)}
-                />
+
+              {/* Kredit section */}
+              {debitPct < 100 && (
+                <div className="bg-amber-50 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard size={13} className="text-amber-600" />
+                    <p className="text-xs font-bold text-amber-700">
+                      Kartu Kredit — {formatRupiah(vol * edcPct / 100 * (100 - debitPct) / 100)}
+                    </p>
+                  </div>
+                  <SliderInput
+                    label={`On-Us (Kartu Mandiri): ${kreditOnUsPct}% | Off-Us (Bank Lain): ${100 - kreditOnUsPct}%`}
+                    value={kreditOnUsPct}
+                    onChange={v => setKreditOnUsPct(v)}
+                  />
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white rounded-lg p-2 text-center">
+                      <p className="text-slate-500">On-Us Kredit <span className="text-amber-600">(1.80%)</span></p>
+                      <p className="font-bold text-amber-700">{formatRupiah(vol * edcPct/100 * (100-debitPct)/100 * kreditOnUsPct/100)}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 text-center">
+                      <p className="text-slate-500">Off-Us Kredit <span className="text-amber-600">(1.80%)</span></p>
+                      <p className="font-bold text-amber-700">{formatRupiah(vol * edcPct/100 * (100-debitPct)/100 * (100-kreditOnUsPct)/100)}</p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
