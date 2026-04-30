@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Head 30)",
+      "PowerShell($env:Path)",
+      "Read(//c/Program Files/**)",
+      "PowerShell($env:Path = $env:Path + \";C:\\\\Program Files\\\\nodejs;C:\\\\Users\\\\ASUS\\\\AppData\\\\Roaming\\\\npm\"; node --version 2>&1)",
+      "WebSearch"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ASUS\\.claude\\projects\\c--CLAUDE-Portal-Akuisisi-Merchant\\memory"
+    ]
+  }
+}

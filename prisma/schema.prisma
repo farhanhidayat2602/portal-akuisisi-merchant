@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("SALES")
+  phone     String?
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  points    Int      @default(0)
+  visits    Visit[]
+  locks     MerchantLock[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Branch {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  address   String?
+  city      String
+  lat       Float
+  lng       Float
+  merchants Merchant[]
+  users     User[]
+  createdAt DateTime   @default(now())
+}
+
+model Merchant {
+  id              String   @id @default(cuid())
+  name            String
+  category        String   @default("FnB")
+  address         String?
+  lat             Float
+  lng             Float
+  googleRating    Float?
+  totalReviews    Int?
+  priceRange      String?
+  status          String   @default("AVAILABLE")
+  isMandiriEDC    Boolean  @default(false)
+  isMandiriQRIS   Boolean  @default(false)
+  isViralTikTok   Boolean  @default(false)
+  tiktokUrl       String?
+  googleMapsUrl   String?
+  photoUrl        String?
+  phone           String?
+  ownerName       String?
+  estimatedVolume Float?
+  notes           String?
+  branchId        String
+  branch          Branch   @relation(fields: [branchId], references: [id])
+  visits          Visit[]
+  lock            MerchantLock?
+  lastScraped     DateTime?
+  doNotVisitUntil DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MerchantLock {
+  id         String   @id @default(cuid())
+  merchantId String   @unique
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  lockedAt   DateTime @default(now())
+  expiresAt  DateTime
+}
+
+model Visit {
+  id           String    @id @default(cuid())
+  merchantId   String
+  merchant     Merchant  @relation(fields: [merchantId], references: [id])
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  result       String
+  notes        String?
+  rejectReason String?
+  followUpDate DateTime?
+  isHardReject Boolean   @default(false)
+  estVolume    Float?
+  visitedAt    DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+}
+
+model ScrapingLog {
+  id           String    @id @default(cuid())
+  source       String
+  status       String
+  newMerchants Int       @default(0)
+  error        String?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+}

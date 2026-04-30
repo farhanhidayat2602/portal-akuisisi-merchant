@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans antialiased;
+    font-feature-settings: 'kern' 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-mandiri-700 text-white font-semibold rounded-xl
+           hover:bg-mandiri-800 active:scale-95 transition-all duration-150 shadow-mandiri disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-mandiri-700 font-semibold rounded-xl
+           border-2 border-mandiri-700 hover:bg-mandiri-50 active:scale-95 transition-all duration-150 disabled:opacity-50;
+  }
+  .btn-yellow {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-mandiri-yellow text-white font-semibold rounded-xl
+           hover:bg-mandiri-yellow-dark active:scale-95 transition-all duration-150 shadow-sm disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-500 text-white font-semibold rounded-xl
+           hover:bg-red-600 active:scale-95 transition-all duration-150 disabled:opacity-50;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden;
+  }
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer;
+  }
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-mandiri-500 focus:border-transparent transition-all;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .section-header {
+    @apply text-lg font-bold text-slate-800 mb-4;
+  }
+  .stat-card {
+    @apply card p-4 flex items-center gap-3;
+  }
+}
+
+/* Leaflet map */
+.leaflet-container {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  border-radius: 1rem;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+}
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Animations */
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+.shimmer {
+  background: linear-gradient(to right, #f0f4f8 8%, #e2e8f0 18%, #f0f4f8 33%);
+  background-size: 936px 200px;
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* Mobile bottom nav safe area */
+.pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
