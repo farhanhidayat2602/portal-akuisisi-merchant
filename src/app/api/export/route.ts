@@ -2,19 +2,9 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import * as XLSX from 'xlsx'
 
 export const dynamic = 'force-dynamic'
-
-function toCSV(rows: any[][], headers: string[]): string {
-  const escape = (v: any) => {
-    const s = v == null ? '' : String(v)
-    return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? `"${s.replace(/"/g, '""')}"`
-      : s
-  }
-  const lines = [headers.join(','), ...rows.map(r => r.map(escape).join(','))]
-  return lines.join('\r\n')
-}
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -38,35 +28,39 @@ export async function GET(req: Request) {
       orderBy: [{ totalReviews: 'desc' }],
     })
 
-    const headers = [
-      'Nama Merchant', 'Cabang', 'Kota', 'Kategori', 'Alamat',
-      'Rating Google', 'Jumlah Ulasan', 'Est. Volume (Rp)',
-      'Status', 'Viral TikTok', 'Telepon', 'Nama Pemilik',
-      'Kunjungan Terakhir Oleh', 'Tanggal Kunjungan Terakhir',
+    const rows = merchants.map(m => ({
+      'Nama Merchant':            m.name,
+      'Cabang':                   m.branch?.name ?? '',
+      'Kota':                     m.branch?.city ?? '',
+      'Kategori':                 m.category,
+      'Alamat':                   m.address ?? '',
+      'Rating Google':            m.googleRating ?? '',
+      'Jumlah Ulasan':            m.totalReviews ?? '',
+      'Est. Volume (Rp)':         m.estimatedVolume ?? '',
+      'Status':                   m.status,
+      'Viral TikTok':             m.isViralTikTok ? 'Ya' : 'Tidak',
+      'Telepon':                  m.phone ?? '',
+      'Nama Pemilik':             m.ownerName ?? '',
+      'Kunjungan Terakhir Oleh':  m.visits[0]?.user?.name ?? '',
+      'Tanggal Kunjungan':        m.visits[0]?.visitedAt
+                                    ? new Date(m.visits[0].visitedAt).toLocaleDateString('id-ID')
+                                    : '',
+    }))
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [
+      { wch: 30 }, { wch: 22 }, { wch: 15 }, { wch: 12 }, { wch: 30 },
+      { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 12 },
+      { wch: 16 }, { wch: 20 }, { wch: 22 }, { wch: 18 },
     ]
+    XLSX.utils.book_append_sheet(wb, ws, 'Data Merchant')
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
 
-    const rows = merchants.map(m => [
-      m.name,
-      m.branch?.name ?? '',
-      m.branch?.city ?? '',
-      m.category,
-      m.address ?? '',
-      m.googleRating ?? '',
-      m.totalReviews ?? '',
-      m.estimatedVolume ?? '',
-      m.status,
-      m.isViralTikTok ? 'Ya' : 'Tidak',
-      m.phone ?? '',
-      m.ownerName ?? '',
-      m.visits[0]?.user?.name ?? '',
-      m.visits[0]?.visitedAt ? new Date(m.visits[0].visitedAt).toLocaleDateString('id-ID') : '',
-    ])
-
-    const csv = toCSV(rows, headers)
-    return new NextResponse(csv, {
+    return new NextResponse(buf, {
       headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="merchant-${new Date().toISOString().slice(0,10)}.csv"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="merchant-${new Date().toISOString().slice(0,10)}.xlsx"`,
       },
     })
   }
@@ -80,30 +74,35 @@ export async function GET(req: Request) {
       orderBy: { visitedAt: 'desc' },
     })
 
-    const headers = [
-      'Tanggal', 'Sales', 'Merchant', 'Cabang',
-      'Hasil', 'Hard Reject', 'Est. Volume (Rp)',
-      'Follow Up Tanggal', 'Catatan', 'Alasan Tolak',
+    const rows = visits.map(v => ({
+      'Tanggal':           new Date(v.visitedAt).toLocaleDateString('id-ID'),
+      'Sales':             v.user?.name ?? '',
+      'Merchant':          v.merchant?.name ?? '',
+      'Cabang':            v.merchant?.branch?.name ?? '',
+      'Hasil':             v.result,
+      'Hard Reject':       v.isHardReject ? 'Ya' : 'Tidak',
+      'Est. Volume (Rp)':  v.estVolume ?? '',
+      'Follow Up Tanggal': v.followUpDate
+                             ? new Date(v.followUpDate).toLocaleDateString('id-ID')
+                             : '',
+      'Catatan':           v.notes ?? '',
+      'Alasan Tolak':      v.rejectReason ?? '',
+    }))
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [
+      { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 22 },
+      { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 16 },
+      { wch: 30 }, { wch: 25 },
     ]
+    XLSX.utils.book_append_sheet(wb, ws, 'Riwayat Kunjungan')
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
 
-    const rows = visits.map(v => [
-      new Date(v.visitedAt).toLocaleDateString('id-ID'),
-      v.user?.name ?? '',
-      v.merchant?.name ?? '',
-      v.merchant?.branch?.name ?? '',
-      v.result,
-      v.isHardReject ? 'Ya' : 'Tidak',
-      v.estVolume ?? '',
-      v.followUpDate ? new Date(v.followUpDate).toLocaleDateString('id-ID') : '',
-      v.notes ?? '',
-      v.rejectReason ?? '',
-    ])
-
-    const csv = toCSV(rows, headers)
-    return new NextResponse(csv, {
+    return new NextResponse(buf, {
       headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="kunjungan-${new Date().toISOString().slice(0,10)}.csv"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="kunjungan-${new Date().toISOString().slice(0,10)}.xlsx"`,
       },
     })
   }
