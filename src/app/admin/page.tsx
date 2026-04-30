@@ -147,7 +147,7 @@ export default function AdminPage() {
               className="flex items-center gap-2 bg-mandiri-yellow text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-mandiri-yellow-dark transition-colors disabled:opacity-60"
             >
               <RefreshCw size={14} className={scraping ? 'animate-spin' : ''} />
-              {scraping ? 'Scraping...' : 'Update Database'}
+              {scraping ? 'Memproses...' : 'Refresh Data'}
             </button>
           </div>
         </div>
@@ -258,10 +258,11 @@ export default function AdminPage() {
         {activeTab === 'scraping' && (
           <div className="space-y-4">
             <div className="card p-5">
-              <h3 className="font-bold text-slate-800 mb-2">Konfigurasi Auto-Update</h3>
+              <h3 className="font-bold text-slate-800 mb-2">Refresh Data Merchant</h3>
               <p className="text-sm text-slate-600 mb-4">
-                Sistem menjadwalkan update database merchant setiap 7 hari sekali. Sumber data:
-                Google Maps (high-rating, banyak review) dan TikTok (viral, trending di Balikpapan & sekitarnya).
+                Tombol ini memperbarui timestamp <em>lastScraped</em> semua merchant.
+                Untuk menambah merchant baru, gunakan tab <strong>Merchant → Tambah</strong> atau jalankan
+                script <code className="bg-slate-100 px-1 rounded">npm run db:add-merchants</code> di terminal.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-green-50 rounded-xl p-3 text-center">
@@ -281,7 +282,7 @@ export default function AdminPage() {
                 className="btn-primary w-full mt-4"
               >
                 <RefreshCw size={16} className={scraping ? 'animate-spin' : ''} />
-                {scraping ? 'Memproses...' : 'Jalankan Update Sekarang'}
+                {scraping ? 'Memproses...' : 'Refresh Timestamp Sekarang'}
               </button>
             </div>
 
