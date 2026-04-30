@@ -5,9 +5,9 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import {
-  Database, RefreshCw, Plus, Search, Edit2, Trash2,
+  Database, RefreshCw, Plus, Search,
   CheckCircle, XCircle, Clock, BarChart2, Users,
-  Store, Building2, AlertTriangle, Download,
+  Store, AlertTriangle, Download, FileSpreadsheet,
 } from 'lucide-react'
 import { formatRupiah, formatNumber, getStatusColor, getStatusLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -228,6 +228,33 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Export */}
+            <div className="card p-5">
+              <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <FileSpreadsheet size={16} className="text-green-600" />
+                Export Data ke Spreadsheet
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">Download data sebagai file CSV — bisa dibuka di Excel atau Google Sheets.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href="/api/export?type=merchants"
+                  download
+                  className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors"
+                >
+                  <Download size={14} />
+                  Data Merchant
+                </a>
+                <a
+                  href="/api/export?type=visits"
+                  download
+                  className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  <Download size={14} />
+                  Riwayat Kunjungan
+                </a>
               </div>
             </div>
 
