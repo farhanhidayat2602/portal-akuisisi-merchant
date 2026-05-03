@@ -77,9 +77,16 @@ function CalculatorContent() {
   const [qrisPct, setQrisPct] = useState(40)   // % going to QRIS (auto: 100-edcPct)
 
   // EDC sub-splits
-  const [debitPct, setDebitPct]           = useState(70) // % of EDC that is Debit
-  const [debitOnUsPct, setDebitOnUsPct]   = useState(50) // % of Debit that is On-Us
-  const [kreditOnUsPct, setKreditOnUsPct] = useState(40) // % of Kredit that is On-Us
+  const [debitPct, setDebitPct]           = useState(70)
+  const [debitOnUsPct, setDebitOnUsPct]   = useState(50)
+  const [kreditOnUsPct, setKreditOnUsPct] = useState(40)
+
+  // Adjustable rates (%)
+  const [rateDebitOnUs,   setRateDebitOnUs]   = useState('0.15')
+  const [rateDebitOffUs,  setRateDebitOffUs]  = useState('1.00')
+  const [rateKreditOnUs,  setRateKreditOnUs]  = useState('1.80')
+  const [rateKreditOffUs, setRateKreditOffUs] = useState('1.80')
+  const [rateQris,        setRateQris]        = useState('0.70')
 
   const vol = parseFloat(totalVolume) || 0
 
@@ -94,8 +101,25 @@ function CalculatorContent() {
     const edcOnUsCredit  = kreditVol * (kreditOnUsPct / 100)
     const edcOffUsCredit = kreditVol * ((100 - kreditOnUsPct) / 100)
 
-    return calculateFee(edcOnUsDebit, edcOnUsCredit, edcOffUsDebit, edcOffUsCredit, qrisVol)
-  }, [vol, edcPct, debitPct, debitOnUsPct, kreditOnUsPct])
+    const r1 = (parseFloat(rateDebitOnUs)   || 0) / 100
+    const r2 = (parseFloat(rateDebitOffUs)  || 0) / 100
+    const r3 = (parseFloat(rateKreditOnUs)  || 0) / 100
+    const r4 = (parseFloat(rateKreditOffUs) || 0) / 100
+    const r5 = (parseFloat(rateQris)        || 0) / 100
+
+    const edcOnUsDebitFee   = edcOnUsDebit   * r1
+    const edcOffUsDebitFee  = edcOffUsDebit  * r2
+    const edcOnUsCreditFee  = edcOnUsCredit  * r3
+    const edcOffUsCreditFee = edcOffUsCredit * r4
+    const qrisFee           = qrisVol        * r5
+    const totalFee          = edcOnUsDebitFee + edcOffUsDebitFee + edcOnUsCreditFee + edcOffUsCreditFee + qrisFee
+
+    return {
+      edcOnUsDebitFee, edcOffUsDebitFee, edcOnUsCreditFee, edcOffUsCreditFee,
+      qrisFee, totalFee, annualProjection: totalFee * 12,
+    }
+  }, [vol, edcPct, debitPct, debitOnUsPct, kreditOnUsPct,
+      rateDebitOnUs, rateDebitOffUs, rateKreditOnUs, rateKreditOffUs, rateQris])
 
   const pieData = [
     { name: 'EDC Debit On-Us (0.15%)',  value: result.edcOnUsDebitFee  },
@@ -250,32 +274,42 @@ function CalculatorContent() {
           <>
             {/* Fee breakdown table */}
             <div className="card p-5">
-              <h3 className="font-bold text-slate-800 mb-4">Rincian Fee per Kategori</h3>
-              <div className="space-y-2.5">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-bold text-slate-800">Rincian Fee per Kategori</h3>
+                <span className="text-xs text-mandiri-600 bg-mandiri-50 px-2 py-1 rounded-lg font-medium">✏️ Tarif bisa diedit</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-4">Sesuaikan tarif untuk simulasi negosiasi dengan nasabah</p>
+
+              <div className="space-y-3">
                 {[
-                  { label: 'EDC Debit On-Us',   rate: '0.15%', fee: result.edcOnUsDebitFee,   color: 'bg-mandiri-700' },
-                  { label: 'EDC Kredit On-Us',  rate: '1.80%', fee: result.edcOnUsCreditFee,  color: 'bg-mandiri-500' },
-                  { label: 'EDC Debit Off-Us',  rate: '1.00%', fee: result.edcOffUsDebitFee,  color: 'bg-mandiri-yellow' },
-                  { label: 'EDC Kredit Off-Us', rate: '1.80%', fee: result.edcOffUsCreditFee, color: 'bg-amber-400' },
-                  { label: 'QRIS',              rate: '0.70%', fee: result.qrisFee,            color: 'bg-green-500' },
+                  { label: 'EDC Debit On-Us',   color: 'bg-mandiri-700', fee: result.edcOnUsDebitFee,   rate: rateDebitOnUs,   setRate: setRateDebitOnUs,   min: 0.1,  max: 0.3  },
+                  { label: 'EDC Debit Off-Us',   color: 'bg-mandiri-yellow', fee: result.edcOffUsDebitFee,  rate: rateDebitOffUs,  setRate: setRateDebitOffUs,  min: 0.5,  max: 2.0  },
+                  { label: 'EDC Kredit On-Us',   color: 'bg-mandiri-500', fee: result.edcOnUsCreditFee,  rate: rateKreditOnUs,  setRate: setRateKreditOnUs,  min: 1.0,  max: 3.0  },
+                  { label: 'EDC Kredit Off-Us',  color: 'bg-amber-400',   fee: result.edcOffUsCreditFee, rate: rateKreditOffUs, setRate: setRateKreditOffUs, min: 1.0,  max: 3.0  },
+                  { label: 'QRIS',               color: 'bg-green-500',   fee: result.qrisFee,           rate: rateQris,        setRate: setRateQris,        min: 0.3,  max: 1.0  },
                 ].map(item => (
-                  <div key={item.label} className="flex items-center gap-3">
+                  <div key={item.label} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50">
                     <div className={cn('w-2.5 h-2.5 rounded-full shrink-0', item.color)} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-600">{item.label}</span>
-                        <span className="text-xs text-slate-400 ml-2 shrink-0">({item.rate})</span>
-                      </div>
+                    <span className="text-sm text-slate-600 flex-1">{item.label}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={item.min}
+                        max={item.max}
+                        value={item.rate}
+                        onChange={e => item.setRate(e.target.value)}
+                        className="w-16 text-center text-xs font-bold border border-mandiri-200 rounded-lg py-1 px-1 text-mandiri-700 bg-white focus:outline-none focus:ring-1 focus:ring-mandiri-400"
+                      />
+                      <span className="text-xs text-slate-400">%</span>
                     </div>
-                    <span className={cn(
-                      'text-sm font-bold shrink-0',
-                      item.fee > 0 ? 'text-slate-800' : 'text-slate-300'
-                    )}>
+                    <span className={cn('text-sm font-bold shrink-0 w-20 text-right', item.fee > 0 ? 'text-slate-800' : 'text-slate-300')}>
                       {item.fee > 0 ? formatRupiah(item.fee) : '—'}
                     </span>
                   </div>
                 ))}
               </div>
+
               <div className="border-t border-slate-100 mt-4 pt-4 flex justify-between items-center">
                 <span className="font-bold text-slate-700">Total Fee / Bulan</span>
                 <span className="text-xl font-extrabold text-mandiri-700">{formatRupiah(result.totalFee)}</span>

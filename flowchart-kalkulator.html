@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Flowchart Kalkulator Fee — Portal Akuisisi Merchant</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; padding: 24px; color: #1e293b; }
+
+.page { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; }
+
+/* LEFT: Header + Flow */
+.left { flex: 1; display: flex; flex-direction: column; gap: 0; }
+
+.header-box {
+  background: #003B79;
+  color: white;
+  border-radius: 12px 12px 0 0;
+  padding: 20px 24px 16px;
+  margin-bottom: 0;
+}
+.header-box h1 { font-size: 22px; font-weight: 900; letter-spacing: 0.5px; }
+.header-box h2 { font-size: 13px; color: #F5A623; font-weight: 700; margin-top: 4px; letter-spacing: 1px; }
+
+.flow-area {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  padding: 20px 28px 28px;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* RIGHT: Sidebar */
+.right { width: 280px; display: flex; flex-direction: column; gap: 14px; }
+
+.sidebar-card {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+.sidebar-title {
+  background: #003B79;
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 8px 14px;
+  text-transform: uppercase;
+}
+.sidebar-body { padding: 12px 14px; }
+
+/* Legend */
+.legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+.legend-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+.legend-arrow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.arr-solid { width: 30px; height: 2px; background: #334155; position: relative; }
+.arr-solid::after { content:''; position:absolute; right:-1px; top:50%; transform:translateY(-50%);
+  border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid #334155; }
+.arr-dash { width: 30px; height: 2px; background: repeating-linear-gradient(90deg,#94a3b8 0,#94a3b8 4px,transparent 4px,transparent 8px); position: relative; }
+.arr-dash::after { content:''; position:absolute; right:-1px; top:50%; transform:translateY(-50%);
+  border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid #94a3b8; }
+
+/* Penjelasan */
+.expl-list { list-style: none; }
+.expl-list li { font-size: 11.5px; color: #374151; padding: 4px 0; border-bottom: 1px solid #f1f5f9; display: flex; gap: 8px; }
+.expl-list li:last-child { border-bottom: none; }
+.expl-num { font-weight: 800; color: #003B79; min-width: 18px; }
+
+/* Rate table */
+.rate-table { width: 100%; font-size: 11.5px; border-collapse: collapse; }
+.rate-table th { background: #003B79; color: white; padding: 5px 8px; text-align: left; font-size: 11px; }
+.rate-table td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; }
+.rate-table tr:last-child td { border-bottom: none; }
+.rate-table tr:nth-child(even) td { background: #f8fafc; }
+.badge { display:inline-block; background:#003B79; color:white; border-radius:999px; padding:1px 7px; font-size:10px; font-weight:700; }
+
+/* Flow nodes */
+.node { display: flex; flex-direction: column; align-items: center; width: 100%; }
+
+.start-end {
+  background: #1e293b;
+  color: white;
+  border-radius: 999px;
+  padding: 10px 36px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 1px;
+}
+.start-end .icon { font-size: 14px; }
+
+.box {
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-size: 12.5px;
+  font-weight: 700;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.box .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.box .content .sub { font-size: 11px; font-weight: 400; margin-top: 3px; opacity: 0.85; }
+
+.green  { background: #d1fae5; color: #065f46; border-left: 4px solid #00A651; }
+.blue   { background: #dbeafe; color: #1e3a8a; border-left: 4px solid #2563eb; }
+.purple { background: #ede9fe; color: #4c1d95; border-left: 4px solid #7c3aed; }
+.red    { background: #fee2e2; color: #7f1d1d; border-left: 4px solid #dc2626; }
+.yellow { background: #fef3c7; color: #78350f; border-left: 4px solid #F5A623; }
+.navy   { background: #003B79; color: white; border-left: 4px solid #F5A623; }
+
+.diamond-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.diamond {
+  width: 200px; height: 100px;
+  background: #F5A623;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  font-size: 11.5px; font-weight: 800;
+  color: white;
+  padding: 0 36px;
+  line-height: 1.3;
+}
+
+/* Arrow down */
+.arr { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.arr-line { width: 2px; height: 22px; background: #94a3b8; }
+.arr-head { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #94a3b8; }
+
+/* Branch row */
+.branch-row { display: flex; gap: 10px; width: 100%; max-width: 480px; }
+.branch-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0; }
+.branch-label { font-size: 11px; font-weight: 800; padding: 3px 12px; border-radius: 999px; margin-bottom: 6px; }
+.yes { background: #d1fae5; color: #065f46; }
+.no  { background: #fee2e2; color: #7f1d1d; }
+
+/* Side info row */
+.info-row { display: flex; gap: 10px; width: 100%; max-width: 480px; margin-bottom: 0; }
+.info-box { flex: 1; background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 8px;
+            padding: 8px 10px; font-size: 11px; color: #475569; text-align: center; }
+.info-box strong { display: block; font-size: 12px; color: #003B79; margin-bottom: 2px; }
+
+/* connector horizontal */
+.h-line { height: 2px; background: #94a3b8; flex: 1; }
+
+.fee-row { display: flex; gap: 6px; width: 100%; max-width: 480px; flex-wrap: wrap; }
+.fee-chip {
+  flex: 1; min-width: 85px;
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+}
+.fc1 { background: #003B79; }
+.fc2 { background: #0064B4; }
+.fc3 { background: #7c3aed; }
+.fc4 { background: #9d174d; }
+.fc5 { background: #00A651; flex: 0 0 100%; }
+.fee-chip .r { font-size: 10px; font-weight: 400; margin-top: 2px; opacity: 0.85; }
+
+.total-chip {
+  background: #003B79; color: white;
+  border-radius: 10px; padding: 14px 20px;
+  text-align: center; font-size: 14px; font-weight: 800;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 4px 16px rgba(0,59,121,0.25);
+}
+.total-chip .sub { font-size: 11px; font-weight: 400; margin-top: 3px; opacity: 0.8; }
+
+.proj-row { display: flex; gap: 8px; width: 100%; max-width: 440px; }
+.proj-chip { flex: 1; border-radius: 8px; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; }
+.p1 { background: #e0f2fe; color: #0c4a6e; }
+.p2 { background: #003B79; color: white; }
+.proj-chip .sub { font-size: 10px; font-weight: 400; margin-top: 2px; opacity: 0.8; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- LEFT: FLOW -->
+  <div class="left">
+    <div class="header-box">
+      <h1>FLOWCHART KALKULATOR FEE</h1>
+      <h2>MEKANISME SIMULASI FEE-BASED INCOME EDC & QRIS</h2>
+    </div>
+
+    <div class="flow-area">
+
+      <!-- START -->
+      <div class="start-end"><span class="icon">▶</span> START</div>
+
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- 1 -->
+      <div class="box blue">
+        <span class="icon">🧑‍💼</span>
+        <div class="content">1. Sales Buka Halaman Kalkulator
+          <div class="sub">Akses dari menu navbar → Kalkulator, atau langsung dari halaman detail merchant</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- 2 -->
+      <div class="box blue">
+        <span class="icon">💰</span>
+        <div class="content">2. Input Total Volume Transaksi / Bulan
+          <div class="sub">Sales mengetik estimasi total omzet merchant per bulan (dalam Rupiah)</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- 3 -->
+      <div class="box blue">
+        <span class="icon">🎚️</span>
+        <div class="content">3. Atur Split EDC vs QRIS
+          <div class="sub">Geser slider: berapa % transaksi melalui EDC, berapa % melalui QRIS</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- System calc 1 -->
+      <div class="box purple">
+        <span class="icon">⚙️</span>
+        <div class="content">Sistem Otomatis Hitung Volume
+          <div class="sub">Vol EDC = Total × EDC% &nbsp;|&nbsp; Vol QRIS = Total × QRIS%</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- 4 -->
+      <div class="box blue">
+        <span class="icon">💳</span>
+        <div class="content">4. Atur Split Kartu Debit vs Kartu Kredit
+          <div class="sub">Dari total EDC: berapa % transaksi Debit, berapa % Kredit</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- 5 DEBIT & KREDIT side by side -->
+      <div class="info-row">
+        <div class="info-box">
+          <strong>🔵 Skema Kartu Debit</strong>
+          Atur On-Us (Kartu Mandiri) vs Off-Us (Bank Lain)
+        </div>
+        <div class="info-box">
+          <strong>🟠 Skema Kartu Kredit</strong>
+          Atur On-Us (Kartu Mandiri) vs Off-Us (Bank Lain)
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- System calc 2 -->
+      <div class="box purple">
+        <span class="icon">🔢</span>
+        <div class="content">Sistem Kalkulasi Fee per Kategori
+          <div class="sub">Setiap segmen volume dikalikan dengan tarif MDR masing-masing</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- Fee chips -->
+      <div class="fee-row">
+        <div class="fee-chip fc1">EDC On-Us Debit<div class="r">× 0.15%</div></div>
+        <div class="fee-chip fc2">EDC Off-Us Debit<div class="r">× 1.00%</div></div>
+        <div class="fee-chip fc3">EDC On-Us Kredit<div class="r">× 1.80%</div></div>
+        <div class="fee-chip fc4">EDC Off-Us Kredit<div class="r">× 1.80%</div></div>
+        <div class="fee-chip fc5">QRIS<div class="r">× 0.70%</div></div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- Total -->
+      <div class="total-chip">
+        Total Fee / Bulan = Jumlah Semua Fee di Atas
+        <div class="sub">Ditampilkan real-time saat slider digeser</div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- Proyeksi -->
+      <div class="box green">
+        <span class="icon">📈</span>
+        <div class="content">Proyeksi Kumulatif Otomatis
+          <div class="sub">Sistem menghitung proyeksi 6 bulan dan 1 tahun ke depan</div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+      <div class="proj-row">
+        <div class="proj-chip p1">📅 Proyeksi 6 Bulan<div class="sub">Fee × 6</div></div>
+        <div class="proj-chip p2">🏆 Proyeksi 1 Tahun<div class="sub">Fee × 12</div></div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- Decision -->
+      <div class="diamond-wrap">
+        <div class="diamond">Proyeksi Tahunan &gt; Rp 5.000.000?</div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- Branch YES / NO -->
+      <div class="branch-row">
+        <div class="branch-col">
+          <div class="branch-label yes">✅ YA</div>
+          <div class="box yellow" style="font-size:12px;">
+            <span class="icon">🎯</span>
+            <div class="content">Saran Program Retensi
+              <div class="sub">Muncul rekomendasi: sponsorship, co-branding, atau Merchant Premium</div>
+            </div>
+          </div>
+        </div>
+        <div class="branch-col">
+          <div class="branch-label no">❌ TIDAK</div>
+          <div class="box blue" style="font-size:12px;">
+            <span class="icon">📋</span>
+            <div class="content">Lanjut Akuisisi Biasa
+              <div class="sub">Tidak ada program khusus, lanjutkan proses akuisisi normal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arr"><div class="arr-line"></div><div class="arr-head"></div></div>
+
+      <!-- END -->
+      <div class="start-end" style="background:#00A651;">
+        <span class="icon">✅</span> SELESAI — LAPORAN FEE SIAP
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: SIDEBAR -->
+  <div class="right">
+
+    <!-- LEGENDA -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">LEGENDA</div>
+      <div class="sidebar-body">
+        <div class="legend-item"><div class="legend-dot" style="background:#00A651;"></div> Proses Utama / Hasil</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2563eb;"></div> Aksi User / Sales</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F5A623;"></div> Keputusan / Kondisi</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;"></div> Sistem / Otomatis</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F5A623; border-radius:999px;"></div> Rekomendasi / Saran</div>
+        <div style="margin-top:8px; border-top:1px solid #f1f5f9; padding-top:8px;">
+          <div class="legend-arrow"><div class="arr-solid"></div> Alur Proses</div>
+          <div class="legend-arrow"><div class="arr-dash"></div> Informasi Tambahan</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARIF MDR -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">TARIF MDR (FEE RATE)</div>
+      <div class="sidebar-body" style="padding:0;">
+        <table class="rate-table">
+          <tr><th>Kategori</th><th>Tarif</th></tr>
+          <tr><td>EDC Debit On-Us</td><td><span class="badge">0.15%</span></td></tr>
+          <tr><td>EDC Debit Off-Us</td><td><span class="badge">1.00%</span></td></tr>
+          <tr><td>EDC Kredit On-Us</td><td><span class="badge">1.80%</span></td></tr>
+          <tr><td>EDC Kredit Off-Us</td><td><span class="badge">1.80%</span></td></tr>
+          <tr><td>QRIS</td><td><span class="badge">0.70%</span></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- PENJELASAN ALUR -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">PENJELASAN ALUR</div>
+      <div class="sidebar-body">
+        <ul class="expl-list">
+          <li><span class="expl-num">1.</span> Sales buka halaman Kalkulator dari navbar atau detail merchant.</li>
+          <li><span class="expl-num">2.</span> Input estimasi total volume transaksi merchant per bulan.</li>
+          <li><span class="expl-num">3.</span> Atur porsi EDC vs QRIS menggunakan slider interaktif.</li>
+          <li><span class="expl-num">4.</span> Sistem otomatis hitung volume per instrumen.</li>
+          <li><span class="expl-num">5.</span> Atur split Debit vs Kredit dari total EDC.</li>
+          <li><span class="expl-num">6.</span> Untuk Debit: atur On-Us (Mandiri) vs Off-Us (Bank Lain).</li>
+          <li><span class="expl-num">7.</span> Untuk Kredit: atur On-Us (Mandiri) vs Off-Us (Bank Lain).</li>
+          <li><span class="expl-num">8.</span> Sistem kalkulasi fee tiap segmen × tarif MDR.</li>
+          <li><span class="expl-num">9.</span> Total fee & proyeksi 6 bulan / 1 tahun tampil otomatis.</li>
+          <li><span class="expl-num">10.</span> Jika proyeksi &gt; Rp5jt/tahun, muncul saran program retensi.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CATATAN -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">CATATAN</div>
+      <div class="sidebar-body">
+        <ul class="expl-list">
+          <li><span class="expl-num">•</span> Semua slider real-time — hasil langsung berubah tanpa klik tombol.</li>
+          <li><span class="expl-num">•</span> On-Us = kartu diterbitkan Bank Mandiri.</li>
+          <li><span class="expl-num">•</span> Off-Us = kartu diterbitkan bank lain.</li>
+          <li><span class="expl-num">•</span> Kalkulator bisa diakses langsung dari halaman detail merchant.</li>
+          <li><span class="expl-num">•</span> Data tidak tersimpan di database — hanya simulasi.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
