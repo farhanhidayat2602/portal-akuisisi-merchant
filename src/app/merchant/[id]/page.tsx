@@ -80,7 +80,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
       setMerchant(data)
       const myLock = data.lock?.userId === session?.user?.id
       setIsLocked(myLock)
-      if (myLock) setShowVisitForm(false)
+      if (myLock) setShowVisitForm(true)
     } finally {
       setLoading(false)
     }
@@ -89,6 +89,41 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
   useEffect(() => {
     if (session) loadMerchant()
   }, [params.id, session])
+
+  // Restore form state from sessionStorage when returning from calculator
+  useEffect(() => {
+    if (!merchant || !session) return
+    const myLock = merchant.lock?.userId === session.user?.id
+    if (!myLock) return
+    const saved = sessionStorage.getItem(`visitForm_${merchant.id}`)
+    if (!saved) return
+    try {
+      const d = JSON.parse(saved)
+      if (d.visitResult)             setVisitResult(d.visitResult)
+      if (d.notes      != null)      setNotes(d.notes)
+      if (d.rejectReason != null)    setRejectReason(d.rejectReason)
+      if (d.isHardReject != null)    setIsHardReject(d.isHardReject)
+      if (d.followUpDate != null)    setFollowUpDate(d.followUpDate)
+      if (d.estVolume    != null)    setEstVolume(d.estVolume)
+      if (d.existingEDC  != null)    setExistingEDC(d.existingEDC)
+      if (d.existingBankName != null) setExistingBankName(d.existingBankName)
+      if (d.retailContacts)          setRetailContacts(d.retailContacts)
+      if (d.supplierContacts)        setSupplierContacts(d.supplierContacts)
+    } catch {}
+  }, [merchant?.id])
+
+  function saveFormState() {
+    if (!merchant) return
+    sessionStorage.setItem(`visitForm_${merchant.id}`, JSON.stringify({
+      visitResult, notes, rejectReason, isHardReject, followUpDate,
+      estVolume, existingEDC, existingBankName, retailContacts, supplierContacts,
+    }))
+  }
+
+  function clearFormState() {
+    if (!merchant) return
+    sessionStorage.removeItem(`visitForm_${merchant.id}`)
+  }
 
   async function handleStartVisit() {
     if (!merchant) return
@@ -124,6 +159,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
     if (!merchant) return
     try {
       await fetch(`/api/merchants/${merchant.id}/lock`, { method: 'DELETE' })
+      clearFormState()
       setIsLocked(false)
       setShowVisitForm(false)
       toast('Kunjungan dibatalkan', { icon: '↩️' })
@@ -161,6 +197,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
       if (!res.ok) { toast.error('Gagal menyimpan hasil kunjungan'); return }
 
       toast.success(`🎉 +${data.pointsEarned} poin! Hasil kunjungan disimpan.`)
+      clearFormState()
 
       if (visitResult === 'INTERESTED') {
         setCalcVolume(estVolume || String(merchant.estimatedVolume ?? ''))
@@ -786,6 +823,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                 {/* Sudah punya EDC */}
                 <button
                   onClick={() => {
+                    saveFormState()
                     setShowCalcChoice(false)
                     router.push(`/negotiation?volume=${calcVolume}&merchantId=${merchant.id}&branchId=${merchant.branchId}`)
                   }}
@@ -808,6 +846,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                 {/* Belum punya EDC */}
                 <button
                   onClick={() => {
+                    saveFormState()
                     setShowCalcChoice(false)
                     router.push(`/calculator?merchantId=${merchant.id}&volume=${calcVolume}`)
                   }}
