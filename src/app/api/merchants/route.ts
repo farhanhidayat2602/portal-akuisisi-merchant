@@ -56,17 +56,25 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await req.json()
     const { name, category, address, lat, lng, googleRating, totalReviews,
-            estimatedVolume, isViralTikTok, branchId, phone, ownerName, priceRange } = body
+            estimatedVolume, isViralTikTok, branchId: bodyBranchId, phone, ownerName, priceRange, googleMapsUrl } = body
+
+    // SALES can only add to their own branch; ADMIN can specify any branch
+    const branchId = session.user.role === 'ADMIN'
+      ? (bodyBranchId ?? session.user.branchId)
+      : session.user.branchId
 
     if (!name || !branchId) {
       return NextResponse.json({ error: 'name dan branchId wajib diisi' }, { status: 400 })
+    }
+
+    // SALES cannot add to another branch
+    if (session.user.role !== 'ADMIN' && bodyBranchId && bodyBranchId !== session.user.branchId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const branch = await prisma.branch.findUnique({ where: { id: branchId } })
@@ -94,7 +102,7 @@ export async function POST(req: Request) {
         status:          'AVAILABLE',
         branchId,
         lastScraped:     new Date(),
-        googleMapsUrl:   `https://www.google.com/maps/search/?api=1&query=${nameEncoded}`,
+        googleMapsUrl:   googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${nameEncoded}`,
         photoUrl:        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80',
       },
     })

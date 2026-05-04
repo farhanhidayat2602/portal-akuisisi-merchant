@@ -10,9 +10,10 @@ import { Branch, Merchant } from '@/types'
 import { calculateDistance, formatNumber, getStatusLabel } from '@/lib/utils'
 import {
   Search, Filter, SlidersHorizontal, MapPin, Star, TrendingUp,
-  Zap, RefreshCw, X, ChevronDown, Map, List,
+  Zap, RefreshCw, X, ChevronDown, Map, List, Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
 const DynamicMap = dynamic(() => import('@/components/MapComponent'), {
   ssr: false,
@@ -44,6 +45,18 @@ export default function DashboardPage({ params }: { params: { branchId: string }
   const [selectedId, setSelectedId] = useState<string | undefined>()
   const [viewMode, setViewMode] = useState<ViewMode>('split')
   const [showFilters, setShowFilters] = useState(false)
+
+  // Add merchant modal
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addForm, setAddForm] = useState({
+    name: '', category: 'FnB', address: '', phone: '',
+    ownerName: '', estimatedVolume: '', googleMapsUrl: '',
+  })
+  const [addSubmitting, setAddSubmitting] = useState(false)
+
+  function resetAddForm() {
+    setAddForm({ name: '', category: 'FnB', address: '', phone: '', ownerName: '', estimatedVolume: '', googleMapsUrl: '' })
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/')
@@ -102,6 +115,37 @@ export default function DashboardPage({ params }: { params: { branchId: string }
     locked:    merchants.filter(m => m.status === 'LOCKED').length,
     interested: merchants.filter(m => m.status === 'INTERESTED').length,
     viral:     merchants.filter(m => m.isViralTikTok).length,
+  }
+
+  async function handleAddMerchant(e: React.FormEvent) {
+    e.preventDefault()
+    if (!addForm.name.trim()) return
+    setAddSubmitting(true)
+    try {
+      const res = await fetch('/api/merchants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addForm.name.trim(),
+          category: addForm.category,
+          address: addForm.address.trim() || undefined,
+          phone: addForm.phone.trim() || undefined,
+          ownerName: addForm.ownerName.trim() || undefined,
+          estimatedVolume: addForm.estimatedVolume ? parseFloat(addForm.estimatedVolume) : undefined,
+          googleMapsUrl: addForm.googleMapsUrl.trim() || undefined,
+          branchId: params.branchId,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Gagal menambahkan merchant'); return }
+      toast.success(`✅ ${addForm.name} berhasil ditambahkan!`)
+      setShowAddModal(false)
+      resetAddForm()
+      await loadData()
+      router.push(`/merchant/${data.merchant.id}`)
+    } finally {
+      setAddSubmitting(false)
+    }
   }
 
   if (status === 'loading' || loading) {
@@ -298,6 +342,168 @@ export default function DashboardPage({ params }: { params: { branchId: string }
           )}
         </div>
       </div>
+
+      {/* FAB — Tambah Merchant */}
+      <button
+        onClick={() => { resetAddForm(); setShowAddModal(true) }}
+        className="fixed bottom-6 right-5 z-40 flex items-center gap-2 bg-mandiri-700 hover:bg-mandiri-800 text-white font-semibold text-sm px-4 py-3 rounded-2xl shadow-lg shadow-mandiri-900/30 transition-all active:scale-95"
+      >
+        <Plus size={18} />
+        Tambah Merchant
+      </button>
+
+      {/* Modal tambah merchant */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+          <div className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-xl animate-slide-up max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Tambah Merchant Baru</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Merchant yang belum ada di daftar</p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddMerchant} className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+              {/* Nama */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                  Nama Merchant <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={addForm.name}
+                  onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Cth: Warung Makan Sumber Rejeki"
+                  className="input"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {/* Kategori */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">Kategori</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['FnB', 'Retail', 'Fashion', 'Elektronik', 'Minimarket', 'Apotek', 'Salon', 'Hotel', 'Bengkel', 'Klinik', 'Supermarket', 'Lainnya'].map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setAddForm(f => ({ ...f, category: cat }))}
+                      className={cn(
+                        'py-2 rounded-xl text-xs font-semibold border-2 transition-all',
+                        addForm.category === cat
+                          ? 'border-mandiri-500 bg-mandiri-50 text-mandiri-700'
+                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Alamat */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">Alamat</label>
+                <input
+                  type="text"
+                  value={addForm.address}
+                  onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
+                  placeholder="Cth: Jl. Sudirman No. 12, Balikpapan"
+                  className="input"
+                />
+              </div>
+
+              {/* Telepon & Nama Pemilik */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">No. Telepon</label>
+                  <input
+                    type="tel"
+                    value={addForm.phone}
+                    onChange={e => setAddForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="Cth: 0812xxxx"
+                    className="input"
+                    inputMode="tel"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">Nama Pemilik</label>
+                  <input
+                    type="text"
+                    value={addForm.ownerName}
+                    onChange={e => setAddForm(f => ({ ...f, ownerName: e.target.value }))}
+                    placeholder="Cth: Pak Budi"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Estimasi Volume */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                  Estimasi Volume Transaksi / Bulan
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">Rp</span>
+                  <input
+                    type="number"
+                    value={addForm.estimatedVolume}
+                    onChange={e => setAddForm(f => ({ ...f, estimatedVolume: e.target.value }))}
+                    placeholder="Cth: 150000000"
+                    className="input pl-10"
+                    inputMode="numeric"
+                  />
+                </div>
+                {addForm.estimatedVolume && (
+                  <p className="text-xs text-slate-400 mt-1">
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(parseFloat(addForm.estimatedVolume))}
+                  </p>
+                )}
+              </div>
+
+              {/* Google Maps URL */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                  Link Google Maps <span className="text-slate-400 font-normal">(opsional)</span>
+                </label>
+                <input
+                  type="url"
+                  value={addForm.googleMapsUrl}
+                  onChange={e => setAddForm(f => ({ ...f, googleMapsUrl: e.target.value }))}
+                  placeholder="https://maps.google.com/..."
+                  className="input text-sm"
+                />
+                <p className="text-xs text-slate-400 mt-1">Paste link dari Google Maps untuk navigasi langsung</p>
+              </div>
+
+              <div className="pb-4">
+                <button
+                  type="submit"
+                  disabled={addSubmitting || !addForm.name.trim()}
+                  className="btn-primary w-full py-3"
+                >
+                  {addSubmitting ? (
+                    <span className="flex items-center gap-2 justify-center">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Menyimpan...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2 justify-center">
+                      <Plus size={16} />
+                      Tambahkan & Mulai Kunjungi
+                    </span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
