@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
   Building2, MapPin, ChevronRight, Search, LogOut,
-  Calculator, Trophy, Store, TrendingUp, Zap, Shield,
+  Calculator, Trophy, Store, TrendingUp, Shield, PiggyBank,
 } from 'lucide-react'
 import { Branch } from '@/types'
 import { format } from 'date-fns'
@@ -127,8 +127,8 @@ export default function SelectBranchPage() {
       <div className="max-w-2xl mx-auto px-4 -mt-1 pb-10">
 
         {/* ── QUICK ACTIONS ── */}
-        <div className="grid grid-cols-2 gap-3 mt-4 mb-4">
-          {/* Calculator card */}
+        <div className="grid grid-cols-2 gap-3 mt-4 mb-3">
+          {/* Calculator Fee card */}
           <button
             onClick={() => router.push('/calculator')}
             className="relative overflow-hidden bg-mandiri-yellow rounded-2xl p-4 text-left shadow-md active:scale-95 transition-transform"
@@ -142,31 +142,35 @@ export default function SelectBranchPage() {
             </div>
           </button>
 
-          {/* Leaderboard card */}
+          {/* Negotiation Calculator card */}
           <button
-            onClick={() => router.push('/leaderboard')}
-            className="relative overflow-hidden bg-purple-600 rounded-2xl p-4 text-left shadow-md active:scale-95 transition-transform"
+            onClick={() => router.push('/negotiation')}
+            className="relative overflow-hidden bg-green-600 rounded-2xl p-4 text-left shadow-md active:scale-95 transition-transform"
           >
             <div className="absolute -bottom-3 -right-3 w-20 h-20 bg-white/10 rounded-full" />
-            <Trophy size={22} className="text-yellow-300 mb-2" />
-            <p className="text-white font-bold text-sm">Leaderboard</p>
-            <p className="text-purple-200 text-xs mt-0.5">Ranking poin sales</p>
-            <div className="mt-3 flex items-center gap-1 text-purple-200 text-xs font-semibold">
-              Lihat <ChevronRight size={12} />
+            <PiggyBank size={22} className="text-green-200 mb-2" />
+            <p className="text-white font-bold text-sm">Simulasi Hemat</p>
+            <p className="text-green-200 text-xs mt-0.5">Negosiasi vs bank lain</p>
+            <div className="mt-3 flex items-center gap-1 text-green-200 text-xs font-semibold">
+              Hitung <ChevronRight size={12} />
             </div>
           </button>
         </div>
 
-        {/* ── MINI CALCULATOR WIDGET ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 bg-mandiri-yellow rounded-lg flex items-center justify-center">
-              <Zap size={14} className="text-white" />
-            </div>
-            <p className="font-bold text-slate-800 text-sm">Simulasi Cepat Fee EDC</p>
+        {/* Leaderboard banner */}
+        <button
+          onClick={() => router.push('/leaderboard')}
+          className="w-full bg-purple-600 rounded-2xl p-3.5 mb-4 flex items-center gap-3 text-left active:scale-95 transition-transform shadow-md"
+        >
+          <div className="w-9 h-9 bg-purple-500 rounded-xl flex items-center justify-center shrink-0">
+            <Trophy size={16} className="text-yellow-300" />
           </div>
-          <MiniCalculator onFull={() => router.push('/calculator')} />
-        </div>
+          <div className="flex-1">
+            <p className="text-white font-bold text-sm">Leaderboard</p>
+            <p className="text-purple-200 text-xs">Ranking poin sales terbaik bulan ini</p>
+          </div>
+          <ChevronRight size={16} className="text-purple-300 shrink-0" />
+        </button>
 
         {/* ── INFO BANNER (admin only) ── */}
         {isAdmin && (
@@ -273,70 +277,3 @@ export default function SelectBranchPage() {
   )
 }
 
-// ── MINI CALCULATOR ──────────────────────────────────────────────────────────
-function MiniCalculator({ onFull }: { onFull: () => void }) {
-  const [volume, setVolume] = useState('')
-  const [edcPct, setEdcPct] = useState(60)
-
-  const vol     = parseFloat(volume.replace(/\D/g, '')) || 0
-  const edcVol  = vol * edcPct / 100
-  const qrisVol = vol * (100 - edcPct) / 100
-  const estFee  = edcVol * 0.009 + qrisVol * 0.007  // rough estimate
-
-  const fmt = (n: number) => {
-    if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toFixed(1)}jt`
-    if (n >= 1_000) return `Rp ${(n / 1_000).toFixed(0)}rb`
-    return `Rp ${n.toLocaleString('id-ID')}`
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">Rp</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={volume}
-          onChange={e => setVolume(e.target.value.replace(/\D/g, ''))}
-          placeholder="Volume transaksi / bulan"
-          className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mandiri-300 bg-slate-50"
-        />
-      </div>
-
-      <div>
-        <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>EDC {edcPct}%</span><span>QRIS {100 - edcPct}%</span>
-        </div>
-        <input
-          type="range" min={0} max={100} value={edcPct}
-          onChange={e => setEdcPct(parseInt(e.target.value))}
-          className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-mandiri-700"
-        />
-      </div>
-
-      {vol > 0 && (
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-mandiri-50 rounded-xl p-2">
-            <p className="text-xs text-slate-500">EDC</p>
-            <p className="text-xs font-bold text-mandiri-700">{fmt(edcVol)}</p>
-          </div>
-          <div className="bg-green-50 rounded-xl p-2">
-            <p className="text-xs text-slate-500">QRIS</p>
-            <p className="text-xs font-bold text-green-700">{fmt(qrisVol)}</p>
-          </div>
-          <div className="bg-amber-50 rounded-xl p-2">
-            <p className="text-xs text-slate-500">Est. Fee</p>
-            <p className="text-xs font-bold text-amber-700">{fmt(estFee)}</p>
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={onFull}
-        className="w-full bg-mandiri-700 text-white rounded-xl py-2 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-mandiri-800 transition-colors"
-      >
-        <Calculator size={13} /> Buka Kalkulator Lengkap
-      </button>
-    </div>
-  )
-}
