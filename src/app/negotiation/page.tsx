@@ -18,6 +18,9 @@ function NegotiationContent() {
     const v = searchParams.get('volume')
     return v ? v.replace(/\D/g, '') : ''
   })
+
+  const merchantId = searchParams.get('merchantId')
+  const branchId   = searchParams.get('branchId')
   const [qrisPct, setQrisPct]         = useState(40)
   const [debitPct, setDebitPct]       = useState(70)
   const [debitOnUsPct, setDebitOnUsPct]   = useState(50)
@@ -87,7 +90,7 @@ function NegotiationContent() {
         title="Kalkulator Negosiasi"
         subtitle="Perbandingan biaya EDC existing vs Mandiri"
         showBack
-        backHref="/select-branch"
+        backHref={merchantId ? `/merchant/${merchantId}` : '/select-branch'}
       />
 
       {/* Hero */}
@@ -444,7 +447,10 @@ function NegotiationContent() {
                 <div className="bg-mandiri-700 rounded-2xl p-4 space-y-2.5">
                   <p className="text-white font-bold text-sm text-center">Siap Hemat Bersama Mandiri?</p>
                   <button
-                    onClick={() => router.push('/select-branch')}
+                    onClick={() => {
+                      if (merchantId) router.push(`/merchant/${merchantId}`)
+                      else router.back()
+                    }}
                     className="w-full bg-mandiri-yellow text-white rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all"
                   >
                     <CheckCircle2 size={15} />
@@ -452,7 +458,10 @@ function NegotiationContent() {
                     <ArrowRight size={13} />
                   </button>
                   <button
-                    onClick={() => router.push('/select-branch')}
+                    onClick={() => {
+                      if (merchantId) router.push(`/merchant/${merchantId}`)
+                      else router.back()
+                    }}
                     className="w-full bg-mandiri-600/60 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-mandiri-600 transition-colors"
                   >
                     <Clock size={14} />

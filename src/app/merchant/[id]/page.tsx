@@ -787,7 +787,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                 <button
                   onClick={() => {
                     setShowCalcChoice(false)
-                    router.push(`/negotiation?volume=${calcVolume}`)
+                    router.push(`/negotiation?volume=${calcVolume}&merchantId=${merchant.id}&branchId=${merchant.branchId}`)
                   }}
                   className="w-full flex items-start gap-4 bg-red-50 border-2 border-red-100 hover:border-red-300 rounded-2xl p-4 text-left transition-all active:scale-98"
                 >
