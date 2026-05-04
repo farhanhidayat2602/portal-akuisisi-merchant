@@ -39,6 +39,8 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
   const [isLocked, setIsLocked] = useState(false)
   const [showVisitForm, setShowVisitForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [showCalcChoice, setShowCalcChoice] = useState(false)
+  const [calcVolume, setCalcVolume] = useState('')
 
   // Visit form state
   const [visitResult, setVisitResult] = useState<VisitResult>('INTERESTED')
@@ -152,7 +154,9 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
       toast.success(`🎉 +${data.pointsEarned} poin! Hasil kunjungan disimpan.`)
 
       if (visitResult === 'INTERESTED') {
-        router.push(`/calculator?merchantId=${merchant.id}&volume=${estVolume || merchant.estimatedVolume || ''}`)
+        setCalcVolume(estVolume || String(merchant.estimatedVolume ?? ''))
+        setShowVisitForm(false)
+        setShowCalcChoice(true)
       } else {
         router.push(`/dashboard/${merchant.branchId}`)
       }
@@ -413,7 +417,10 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                 </a>
               )}
               <button
-                onClick={() => router.push(`/calculator?merchantId=${merchant.id}&volume=${merchant.estimatedVolume ?? ''}`)}
+                onClick={() => {
+                  setCalcVolume(String(merchant.estimatedVolume ?? ''))
+                  setShowCalcChoice(true)
+                }}
                 className="btn-secondary flex-1 py-2.5 text-sm"
               >
                 <Calculator size={14} />
@@ -671,6 +678,78 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
               ) : 'Simpan Hasil Kunjungan'}
             </button>
           </form>
+        )}
+
+        {/* ── KALKULATOR CHOICE MODAL ── */}
+        {showCalcChoice && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowCalcChoice(false)}
+            />
+            <div className="relative w-full max-w-lg bg-white rounded-t-3xl p-6 shadow-xl animate-slide-up">
+              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+              <h3 className="font-bold text-slate-800 text-base mb-1 text-center">
+                Pilih Jenis Kalkulator
+              </h3>
+              <p className="text-xs text-slate-400 text-center mb-5">
+                Apakah merchant ini sudah punya EDC dari bank lain?
+              </p>
+
+              <div className="space-y-3">
+                {/* Sudah punya EDC */}
+                <button
+                  onClick={() => {
+                    setShowCalcChoice(false)
+                    router.push(`/negotiation?volume=${calcVolume}`)
+                  }}
+                  className="w-full flex items-start gap-4 bg-red-50 border-2 border-red-100 hover:border-red-300 rounded-2xl p-4 text-left transition-all active:scale-98"
+                >
+                  <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xl">🏦</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">Sudah punya EDC bank lain</p>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                      Bandingkan biaya bank existing vs Mandiri — tunjukkan berapa merchant bisa hemat
+                    </p>
+                    <span className="inline-block mt-2 text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                      Kalkulator Negosiasi
+                    </span>
+                  </div>
+                </button>
+
+                {/* Belum punya EDC */}
+                <button
+                  onClick={() => {
+                    setShowCalcChoice(false)
+                    router.push(`/calculator?merchantId=${merchant.id}&volume=${calcVolume}`)
+                  }}
+                  className="w-full flex items-start gap-4 bg-mandiri-50 border-2 border-mandiri-100 hover:border-mandiri-300 rounded-2xl p-4 text-left transition-all active:scale-98"
+                >
+                  <div className="w-10 h-10 bg-mandiri-700 rounded-xl flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xl">✨</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">Belum punya EDC</p>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                      Simulasikan potensi fee-based income dari merchant baru untuk Mandiri
+                    </p>
+                    <span className="inline-block mt-2 text-xs font-semibold text-mandiri-700 bg-mandiri-100 px-2 py-0.5 rounded-full">
+                      Kalkulator Fee MDR
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowCalcChoice(false)}
+                className="w-full mt-4 py-2.5 text-sm text-slate-400 font-medium hover:text-slate-600 transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
         )}
 
         {/* DO NOT VISIT notice */}

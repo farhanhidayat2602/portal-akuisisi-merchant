@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import {
   Calculator, TrendingUp, PiggyBank, Calendar,
@@ -10,10 +10,14 @@ import {
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 
-export default function NegotiationPage() {
+function NegotiationContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const [volume, setVolume]           = useState('')
+  const [volume, setVolume] = useState(() => {
+    const v = searchParams.get('volume')
+    return v ? v.replace(/\D/g, '') : ''
+  })
   const [qrisPct, setQrisPct]         = useState(40)
   const [debitPct, setDebitPct]       = useState(70)
   const [debitOnUsPct, setDebitOnUsPct]   = useState(50)
@@ -485,5 +489,17 @@ export default function NegotiationPage() {
 
       </div>
     </div>
+  )
+}
+
+export default function NegotiationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-mandiri-200 border-t-mandiri-700 rounded-full animate-spin" />
+      </div>
+    }>
+      <NegotiationContent />
+    </Suspense>
   )
 }
