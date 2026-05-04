@@ -138,7 +138,7 @@ function CalculatorContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-10">
-      <Navbar title="Kalkulator Fee" subtitle="Simulasi pendapatan fee-based income" />
+      <Navbar title="Kalkulator Fee" subtitle="Simulasi pendapatan fee-based income" showBack backHref="/select-branch" />
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
         {/* Info header */}

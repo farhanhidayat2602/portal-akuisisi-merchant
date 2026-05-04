@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar title="Leaderboard" subtitle="Ranking Sales Terbaik" />
+        <Navbar title="Leaderboard" subtitle="Ranking Sales Terbaik" showBack backHref="/select-branch" />
         <div className="flex items-center justify-center h-64">
           <div className="w-10 h-10 border-4 border-mandiri-200 border-t-mandiri-700 rounded-full animate-spin" />
         </div>
@@ -59,7 +59,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-8">
-      <Navbar title="Leaderboard" subtitle="Ranking Sales Terbaik Bulan Ini" />
+      <Navbar title="Leaderboard" subtitle="Ranking Sales Terbaik Bulan Ini" showBack backHref="/select-branch" />
 
       {/* Header */}
       <div className="bg-mandiri-700 px-4 py-6 text-white">
