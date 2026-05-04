@@ -9,7 +9,9 @@ import {
   Star, MapPin, Users, TrendingUp, Phone, Navigation, Zap,
   Lock, Unlock, CheckCircle, XCircle, Clock, ChevronRight,
   AlertTriangle, Calculator, ExternalLink, Building2,
+  UserPlus, Briefcase, Trash2, Network,
 } from 'lucide-react'
+import { RetailContact, SupplierContact } from '@/types'
 import { formatRupiah, formatNumber, getStatusColor, getStatusLabel, getStatusDot, calculateDistance, formatDistance } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -45,6 +47,20 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
   const [isHardReject, setIsHardReject] = useState(false)
   const [followUpDate, setFollowUpDate] = useState('')
   const [estVolume, setEstVolume] = useState('')
+
+  // Ecosystem state
+  const [retailContacts, setRetailContacts]       = useState<RetailContact[]>([])
+  const [supplierContacts, setSupplierContacts]   = useState<SupplierContact[]>([])
+
+  const addRetail    = () => setRetailContacts(p => [...p, { name: '', relation: '', phone: '' }])
+  const removeRetail = (i: number) => setRetailContacts(p => p.filter((_, idx) => idx !== i))
+  const setRetail    = (i: number, k: keyof RetailContact, v: string) =>
+    setRetailContacts(p => p.map((c, idx) => idx === i ? { ...c, [k]: v } : c))
+
+  const addSupplier    = () => setSupplierContacts(p => [...p, { businessName: '', ownerName: '', phone: '' }])
+  const removeSupplier = (i: number) => setSupplierContacts(p => p.filter((_, idx) => idx !== i))
+  const setSupplier    = (i: number, k: keyof SupplierContact, v: string) =>
+    setSupplierContacts(p => p.map((s, idx) => idx === i ? { ...s, [k]: v } : s))
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/')
@@ -124,6 +140,10 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
           followUpDate: visitResult === 'FOLLOW_UP' ? followUpDate : undefined,
           isHardReject: visitResult === 'REJECTED' ? isHardReject : false,
           estVolume: estVolume ? parseFloat(estVolume) : undefined,
+          ecosystemData: {
+            retail:    retailContacts.filter(c => c.name.trim() || c.phone.trim()),
+            suppliers: supplierContacts.filter(s => s.businessName.trim() || s.phone.trim()),
+          },
         }),
       })
       const data = await res.json()
@@ -510,6 +530,132 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                 rows={3}
                 className="input resize-none"
               />
+            </div>
+
+            {/* ── EKOSISTEM MERCHANT ── */}
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Network size={15} className="text-mandiri-600" />
+                <h4 className="font-bold text-slate-800 text-sm">Ekosistem Merchant</h4>
+                <span className="text-xs text-slate-400 ml-auto">Opsional</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-4">
+                Gali potensi nasabah lain dari jaringan merchant ini
+              </p>
+
+              {/* Retail / Keluarga */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <UserPlus size={13} className="text-purple-500" />
+                    <p className="text-xs font-bold text-slate-700">Potensi Retail (Owner / Keluarga)</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addRetail}
+                    className="text-xs text-mandiri-600 font-semibold hover:text-mandiri-800 flex items-center gap-0.5"
+                  >
+                    + Tambah
+                  </button>
+                </div>
+                {retailContacts.length === 0 && (
+                  <p className="text-xs text-slate-400 italic text-center py-2">
+                    Klik "+ Tambah" untuk mencatat kontak retail
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {retailContacts.map((c, i) => (
+                    <div key={i} className="bg-purple-50 rounded-xl p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          placeholder="Nama"
+                          value={c.name}
+                          onChange={e => setRetail(i, 'name', e.target.value)}
+                          className="input py-2 text-sm"
+                        />
+                        <input
+                          placeholder="Hubungan (cth: Istri)"
+                          value={c.relation}
+                          onChange={e => setRetail(i, 'relation', e.target.value)}
+                          className="input py-2 text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          placeholder="Nomor HP"
+                          inputMode="tel"
+                          value={c.phone}
+                          onChange={e => setRetail(i, 'phone', e.target.value)}
+                          className="input py-2 text-sm flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeRetail(i)}
+                          className="p-2 text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Supplier */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase size={13} className="text-amber-500" />
+                    <p className="text-xs font-bold text-slate-700">Potensi Supplier</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addSupplier}
+                    className="text-xs text-mandiri-600 font-semibold hover:text-mandiri-800 flex items-center gap-0.5"
+                  >
+                    + Tambah
+                  </button>
+                </div>
+                {supplierContacts.length === 0 && (
+                  <p className="text-xs text-slate-400 italic text-center py-2">
+                    Klik "+ Tambah" untuk mencatat supplier merchant
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {supplierContacts.map((s, i) => (
+                    <div key={i} className="bg-amber-50 rounded-xl p-3 space-y-2">
+                      <input
+                        placeholder="Nama Usaha Supplier (cth: Toko Sumber Makmur)"
+                        value={s.businessName}
+                        onChange={e => setSupplier(i, 'businessName', e.target.value)}
+                        className="input py-2 text-sm w-full"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          placeholder="Nama Pemilik"
+                          value={s.ownerName}
+                          onChange={e => setSupplier(i, 'ownerName', e.target.value)}
+                          className="input py-2 text-sm flex-1"
+                        />
+                        <input
+                          placeholder="Nomor HP"
+                          inputMode="tel"
+                          value={s.phone}
+                          onChange={e => setSupplier(i, 'phone', e.target.value)}
+                          className="input py-2 text-sm flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeSupplier(i)}
+                          className="p-2 text-red-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <button

@@ -54,6 +54,23 @@ export interface MerchantLock {
   expiresAt: string
 }
 
+export interface RetailContact {
+  name: string
+  relation: string
+  phone: string
+}
+
+export interface SupplierContact {
+  businessName: string
+  ownerName: string
+  phone: string
+}
+
+export interface EcosystemData {
+  retail: RetailContact[]
+  suppliers: SupplierContact[]
+}
+
 export interface Visit {
   id: string
   merchantId: string
@@ -65,6 +82,7 @@ export interface Visit {
   followUpDate?: string
   isHardReject: boolean
   estVolume?: number
+  ecosystemData?: EcosystemData
   visitedAt: string
 }
 

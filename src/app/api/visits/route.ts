@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json()
-    const { merchantId, result, notes, rejectReason, followUpDate, isHardReject, estVolume } = body
+    const { merchantId, result, notes, rejectReason, followUpDate, isHardReject, estVolume, ecosystemData } = body
 
     if (!merchantId || !result) {
       return NextResponse.json({ error: 'merchantId and result are required' }, { status: 400 })
@@ -26,6 +26,7 @@ export async function POST(req: Request) {
         followUpDate: followUpDate ? new Date(followUpDate) : null,
         isHardReject: isHardReject ?? false,
         estVolume,
+        ecosystemData: ecosystemData ?? undefined,
       },
     })
 

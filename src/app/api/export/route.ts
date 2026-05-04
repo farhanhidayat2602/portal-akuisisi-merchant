@@ -107,5 +107,73 @@ export async function GET(req: Request) {
     })
   }
 
+  if (type === 'ecosystem') {
+    const allVisits = await prisma.visit.findMany({
+      include: {
+        merchant: { select: { name: true, branch: { select: { name: true } } } },
+        user: { select: { name: true } },
+      },
+      orderBy: { visitedAt: 'desc' },
+    })
+    const visits = allVisits.filter(v => v.ecosystemData !== null)
+
+    type EcoRow = Record<string, string | number>
+    const rows: EcoRow[] = []
+
+    for (const v of visits) {
+      const eco = v.ecosystemData as { retail?: { name: string; relation: string; phone: string }[]; suppliers?: { businessName: string; ownerName: string; phone: string }[] } | null
+      if (!eco) continue
+
+      const base = {
+        'Tanggal Kunjungan': new Date(v.visitedAt).toLocaleDateString('id-ID'),
+        'Sales':             v.user?.name ?? '',
+        'Nama Merchant':     v.merchant?.name ?? '',
+        'Cabang':            v.merchant?.branch?.name ?? '',
+      }
+
+      for (const r of (eco.retail ?? [])) {
+        if (!r.name && !r.phone) continue
+        rows.push({
+          ...base,
+          'Tipe Lead':     'Retail (Owner/Keluarga)',
+          'Nama':          r.name ?? '',
+          'Hubungan':      r.relation ?? '',
+          'Nama Pemilik':  '',
+          'Nomor HP':      r.phone ?? '',
+        })
+      }
+
+      for (const s of (eco.suppliers ?? [])) {
+        if (!s.businessName && !s.phone) continue
+        rows.push({
+          ...base,
+          'Tipe Lead':     'Supplier',
+          'Nama':          s.businessName ?? '',
+          'Hubungan':      '',
+          'Nama Pemilik':  s.ownerName ?? '',
+          'Nomor HP':      s.phone ?? '',
+        })
+      }
+    }
+
+    const wb = XLSX.utils.book_new()
+    const ws = rows.length > 0
+      ? XLSX.utils.json_to_sheet(rows)
+      : XLSX.utils.aoa_to_sheet([['Tanggal Kunjungan','Sales','Nama Merchant','Cabang','Tipe Lead','Nama','Hubungan','Nama Pemilik','Nomor HP']])
+    ws['!cols'] = [
+      { wch: 16 }, { wch: 20 }, { wch: 28 }, { wch: 22 },
+      { wch: 22 }, { wch: 25 }, { wch: 18 }, { wch: 22 }, { wch: 18 },
+    ]
+    XLSX.utils.book_append_sheet(wb, ws, 'Ekosistem Leads')
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+
+    return new NextResponse(buf, {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="ekosistem-leads-${new Date().toISOString().slice(0,10)}.xlsx"`,
+      },
+    })
+  }
+
   return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
 }

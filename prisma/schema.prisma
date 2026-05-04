@@ -79,19 +79,20 @@ model MerchantLock {
 }
 
 model Visit {
-  id           String    @id @default(cuid())
-  merchantId   String
-  merchant     Merchant  @relation(fields: [merchantId], references: [id])
-  userId       String
-  user         User      @relation(fields: [userId], references: [id])
-  result       String
-  notes        String?
-  rejectReason String?
-  followUpDate DateTime?
-  isHardReject Boolean   @default(false)
-  estVolume    Float?
-  visitedAt    DateTime  @default(now())
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  merchantId     String
+  merchant       Merchant  @relation(fields: [merchantId], references: [id])
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  result         String
+  notes          String?
+  rejectReason   String?
+  followUpDate   DateTime?
+  isHardReject   Boolean   @default(false)
+  estVolume      Float?
+  ecosystemData  Json?
+  visitedAt      DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 }
 
 model ScrapingLog {

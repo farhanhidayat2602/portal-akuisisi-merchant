@@ -255,6 +255,14 @@ export default function AdminPage() {
                   <Download size={14} />
                   Riwayat Kunjungan
                 </a>
+                <a
+                  href="/api/export?type=ecosystem"
+                  download
+                  className="col-span-2 flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  <Download size={14} />
+                  Ekosistem Leads (Retail &amp; Supplier)
+                </a>
               </div>
             </div>
 
