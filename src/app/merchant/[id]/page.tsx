@@ -50,6 +50,10 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
   const [followUpDate, setFollowUpDate] = useState('')
   const [estVolume, setEstVolume] = useState('')
 
+  // Existing EDC state
+  const [existingEDC, setExistingEDC]         = useState<'NONE' | 'MANDIRI' | 'OTHER' | ''>('')
+  const [existingBankName, setExistingBankName] = useState('')
+
   // Ecosystem state
   const [retailContacts, setRetailContacts]       = useState<RetailContact[]>([])
   const [supplierContacts, setSupplierContacts]   = useState<SupplierContact[]>([])
@@ -142,6 +146,8 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
           followUpDate: visitResult === 'FOLLOW_UP' ? followUpDate : undefined,
           isHardReject: visitResult === 'REJECTED' ? isHardReject : false,
           estVolume: estVolume ? parseFloat(estVolume) : undefined,
+          existingEDC:      existingEDC || undefined,
+          existingBankName: existingEDC === 'OTHER' ? existingBankName : undefined,
           ecosystemData: {
             retail:    retailContacts.filter(c => c.name.trim() || c.phone.trim()),
             suppliers: supplierContacts.filter(s => s.businessName.trim() || s.phone.trim()),
@@ -460,6 +466,83 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
                   <div className="text-xs font-semibold">{opt.label}</div>
                 </button>
               ))}
+            </div>
+
+            {/* ── STATUS EDC MERCHANT ── */}
+            <div className="border border-slate-200 rounded-2xl p-4 space-y-3">
+              <p className="text-sm font-bold text-slate-700">
+                Status EDC / QRIS Merchant Saat Ini
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { v: 'NONE',    label: 'Belum punya',    emoji: '🚫', color: 'border-slate-400 bg-slate-50 text-slate-700' },
+                  { v: 'MANDIRI', label: 'Sudah Mandiri',  emoji: '🏧', color: 'border-mandiri-400 bg-mandiri-50 text-mandiri-700' },
+                  { v: 'OTHER',   label: 'Bank lain',      emoji: '🏦', color: 'border-red-400 bg-red-50 text-red-700' },
+                ] as { v: typeof existingEDC; label: string; emoji: string; color: string }[]).map(opt => (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => { setExistingEDC(opt.v); if (opt.v !== 'OTHER') setExistingBankName('') }}
+                    className={cn(
+                      'border-2 rounded-xl p-2.5 text-center transition-all',
+                      existingEDC === opt.v ? opt.color : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300'
+                    )}
+                  >
+                    <div className="text-xl mb-1">{opt.emoji}</div>
+                    <div className="text-xs font-semibold leading-tight">{opt.label}</div>
+                  </button>
+                ))}
+              </div>
+
+              {existingEDC === 'OTHER' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Nama Bank yang Digunakan
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {['BCA', 'BRI', 'BNI', 'CIMB', 'BTN', 'Lainnya'].map(bank => (
+                      <button
+                        key={bank}
+                        type="button"
+                        onClick={() => setExistingBankName(bank)}
+                        className={cn(
+                          'py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                          existingBankName === bank
+                            ? 'bg-red-500 text-white border-red-500'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-red-300'
+                        )}
+                      >
+                        {bank}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={existingBankName}
+                    onChange={e => setExistingBankName(e.target.value)}
+                    placeholder="Atau ketik nama bank..."
+                    className="input py-2 text-sm"
+                  />
+                </div>
+              )}
+
+              {existingEDC === 'MANDIRI' && (
+                <div className="flex items-center gap-2 bg-mandiri-50 rounded-xl px-3 py-2">
+                  <span className="text-sm">✅</span>
+                  <p className="text-xs text-mandiri-700 font-medium">
+                    Merchant sudah jadi nasabah Mandiri — fokus ke upsell produk lain
+                  </p>
+                </div>
+              )}
+
+              {existingEDC === 'OTHER' && existingBankName && (
+                <div className="flex items-center gap-2 bg-amber-50 rounded-xl px-3 py-2">
+                  <span className="text-sm">💡</span>
+                  <p className="text-xs text-amber-700 font-medium">
+                    Gunakan Kalkulator Negosiasi untuk tunjukkan penghematan vs {existingBankName}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Conditional fields */}

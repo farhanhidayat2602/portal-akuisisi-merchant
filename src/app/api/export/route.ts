@@ -74,12 +74,21 @@ export async function GET(req: Request) {
       orderBy: { visitedAt: 'desc' },
     })
 
+    const edcLabel = (edc: string | null) => {
+      if (edc === 'NONE')    return 'Belum punya EDC'
+      if (edc === 'MANDIRI') return 'Sudah Mandiri'
+      if (edc === 'OTHER')   return 'Bank lain'
+      return ''
+    }
+
     const rows = visits.map(v => ({
       'Tanggal':           new Date(v.visitedAt).toLocaleDateString('id-ID'),
       'Sales':             v.user?.name ?? '',
       'Merchant':          v.merchant?.name ?? '',
       'Cabang':            v.merchant?.branch?.name ?? '',
       'Hasil':             v.result,
+      'Status EDC':        edcLabel(v.existingEDC),
+      'Bank Existing':     v.existingBankName ?? '',
       'Hard Reject':       v.isHardReject ? 'Ya' : 'Tidak',
       'Est. Volume (Rp)':  v.estVolume ?? '',
       'Follow Up Tanggal': v.followUpDate
@@ -93,8 +102,8 @@ export async function GET(req: Request) {
     const ws = XLSX.utils.json_to_sheet(rows)
     ws['!cols'] = [
       { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 22 },
-      { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 16 },
-      { wch: 30 }, { wch: 25 },
+      { wch: 12 }, { wch: 18 }, { wch: 15 }, { wch: 12 },
+      { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 25 },
     ]
     XLSX.utils.book_append_sheet(wb, ws, 'Riwayat Kunjungan')
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })

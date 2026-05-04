@@ -84,13 +84,15 @@ model Visit {
   merchant       Merchant  @relation(fields: [merchantId], references: [id])
   userId         String
   user           User      @relation(fields: [userId], references: [id])
-  result         String
-  notes          String?
-  rejectReason   String?
-  followUpDate   DateTime?
-  isHardReject   Boolean   @default(false)
-  estVolume      Float?
-  ecosystemData  Json?
+  result           String
+  notes            String?
+  rejectReason     String?
+  followUpDate     DateTime?
+  isHardReject     Boolean   @default(false)
+  estVolume        Float?
+  existingEDC      String?
+  existingBankName String?
+  ecosystemData    Json?
   visitedAt      DateTime  @default(now())
   createdAt      DateTime  @default(now())
 }
