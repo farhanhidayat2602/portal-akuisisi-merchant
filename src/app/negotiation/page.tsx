@@ -10,6 +10,14 @@ import {
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 
+// Format dengan 1 desimal untuk kartu perbandingan biaya agar tidak misleading
+// misal Rp 2.3jt vs Rp 1.7jt — bukan keduanya "Rp 2jt"
+function fmtFee(n: number): string {
+  if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toFixed(1)}jt`
+  if (n >= 1_000)     return `Rp ${(n / 1_000).toFixed(0)}rb`
+  return `Rp ${n.toLocaleString('id-ID')}`
+}
+
 // ── Reusable payment pattern sliders ────────────────────────────────────────
 interface PatternSliderProps {
   qrisPct: number; setQrisPct: (v: number) => void
@@ -422,12 +430,12 @@ function NegotiationContent() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-center">
                   <p className="text-xs font-bold text-red-500 mb-1">🏦 Bank Existing</p>
-                  <p className="text-xl font-extrabold text-red-600 leading-tight">{formatRupiah(calc.existingTotal)}</p>
+                  <p className="text-xl font-extrabold text-red-600 leading-tight">{fmtFee(calc.existingTotal)}</p>
                   <p className="text-xs text-red-400 mt-0.5">per bulan</p>
                 </div>
                 <div className="bg-mandiri-50 border border-mandiri-200 rounded-xl p-4 text-center">
                   <p className="text-xs font-bold text-mandiri-600 mb-1">🏧 Bank Mandiri</p>
-                  <p className="text-xl font-extrabold text-mandiri-700 leading-tight">{formatRupiah(calc.mandiriTotal)}</p>
+                  <p className="text-xl font-extrabold text-mandiri-700 leading-tight">{fmtFee(calc.mandiriTotal)}</p>
                   <p className="text-xs text-mandiri-400 mt-0.5">per bulan</p>
                 </div>
               </div>
