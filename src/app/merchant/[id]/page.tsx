@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { Merchant } from '@/types'
@@ -97,7 +97,10 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
       const res = await fetch(`/api/merchants/${merchant.id}/lock`, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) {
-        if (data.error === 'ALREADY_LOCKED') {
+        if (data.error === 'SESSION_STALE') {
+          toast.error('Sesi sudah tidak valid. Silakan logout dan login kembali.', { duration: 6000 })
+          setTimeout(() => signOut({ callbackUrl: '/' }), 2000)
+        } else if (data.error === 'ALREADY_LOCKED') {
           toast.error(`❌ ${data.message}`, { duration: 5000 })
         } else {
           toast.error(data.message ?? 'Gagal mengunci merchant')

@@ -9,6 +9,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    // Verify user still exists in DB (session could be stale after data reset)
+    const userExists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } })
+    if (!userExists) {
+      return NextResponse.json(
+        { error: 'SESSION_STALE', message: 'Sesi Anda sudah tidak valid. Silakan logout dan login kembali.' },
+        { status: 401 }
+      )
+    }
+
     // Clean expired locks first
     await prisma.merchantLock.deleteMany({
       where: { expiresAt: { lt: new Date() } },
