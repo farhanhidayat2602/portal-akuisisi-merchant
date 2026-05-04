@@ -19,10 +19,12 @@ export default function NegotiationPage() {
   const [debitOnUsPct, setDebitOnUsPct]   = useState(50)
   const [kreditOnUsPct, setKreditOnUsPct] = useState(40)
 
-  const [showExRates, setShowExRates] = useState(false)
-  const [exDebit, setExDebit]         = useState('1.00')
-  const [exKredit, setExKredit]       = useState('2.00')
-  const [exQris, setExQris]           = useState('0.70')
+  const [showExRates, setShowExRates]     = useState(false)
+  const [exDebitOnUs, setExDebitOnUs]   = useState('1.00')
+  const [exDebitOffUs, setExDebitOffUs] = useState('1.00')
+  const [exKreditOnUs, setExKreditOnUs]   = useState('2.00')
+  const [exKreditOffUs, setExKreditOffUs] = useState('2.00')
+  const [exQris, setExQris]             = useState('0.70')
 
   const [showMRates, setShowMRates]   = useState(false)
   const [mDebitOnUs, setMDebitOnUs]   = useState('0.15')
@@ -48,10 +50,12 @@ export default function NegotiationPage() {
     const kreditOnUsVol = kreditVol * kreditOnUsPct / 100
     const kreditOffUsVol = kreditVol * (100 - kreditOnUsPct) / 100
 
-    const exDebitFee  = debitVol  * (parseFloat(exDebit)  / 100)
-    const exKreditFee = kreditVol * (parseFloat(exKredit) / 100)
-    const exQrisFee   = qrisVol   * (parseFloat(exQris)   / 100)
-    const existingTotal = exDebitFee + exKreditFee + exQrisFee
+    const exDebitOnUsFee  = debitOnUsVol  * (parseFloat(exDebitOnUs)  / 100)
+    const exDebitOffUsFee = debitOffUsVol * (parseFloat(exDebitOffUs) / 100)
+    const exKreditOnUsFee  = kreditOnUsVol  * (parseFloat(exKreditOnUs)  / 100)
+    const exKreditOffUsFee = kreditOffUsVol * (parseFloat(exKreditOffUs) / 100)
+    const exQrisFee   = qrisVol * (parseFloat(exQris) / 100)
+    const existingTotal = exDebitOnUsFee + exDebitOffUsFee + exKreditOnUsFee + exKreditOffUsFee + exQrisFee
 
     const mDebitOnUsFee  = debitOnUsVol  * (parseFloat(mDebitOnUs)  / 100)
     const mDebitOffUsFee = debitOffUsVol * (parseFloat(mDebitOffUs) / 100)
@@ -70,7 +74,8 @@ export default function NegotiationPage() {
       savingsPct: existingTotal > 0 ? (savingsPerMonth / existingTotal) * 100 : 0,
     }
   }, [vol, qrisPct, edcPct, debitPct, kreditPct, debitOnUsPct, kreditOnUsPct,
-      exDebit, exKredit, exQris, mDebitOnUs, mDebitOffUs, mKreditOnUs, mKreditOffUs, mQris])
+      exDebitOnUs, exDebitOffUs, exKreditOnUs, exKreditOffUs, exQris,
+      mDebitOnUs, mDebitOffUs, mKreditOnUs, mKreditOffUs, mQris])
 
   return (
     <div className="min-h-screen bg-slate-100 pb-10">
@@ -236,7 +241,7 @@ export default function NegotiationPage() {
             <div className="flex-1 text-left min-w-0">
               <p className="font-bold text-slate-800 text-sm">Tarif Bank Existing</p>
               <p className="text-xs text-slate-400 truncate">
-                Debit {exDebit}% · Kredit {exKredit}% · QRIS {exQris}%
+                Debit On-Us {exDebitOnUs}% · Kredit On-Us {exKreditOnUs}% · QRIS {exQris}%
               </p>
             </div>
             {showExRates
@@ -244,21 +249,32 @@ export default function NegotiationPage() {
               : <ChevronDown size={16} className="text-slate-400 shrink-0" />}
           </button>
           {showExRates && (
-            <div className="px-4 pb-4 border-t border-slate-100 grid grid-cols-3 gap-2">
-              {([
-                ['Debit (%)', exDebit, setExDebit],
-                ['Kredit (%)', exKredit, setExKredit],
-                ['QRIS (%)', exQris, setExQris],
-              ] as [string, string, React.Dispatch<React.SetStateAction<string>>][]).map(([label, val, set]) => (
-                <div key={label} className="mt-3">
-                  <label className="text-xs text-slate-500 font-semibold block mb-1">{label}</label>
-                  <input
-                    type="number" step="0.01" min="0" max="10" value={val}
-                    onChange={e => set(e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-200"
-                  />
-                </div>
-              ))}
+            <div className="px-4 pb-4 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {([
+                  ['Debit On-Us (%)', exDebitOnUs, setExDebitOnUs],
+                  ['Debit Off-Us (%)', exDebitOffUs, setExDebitOffUs],
+                  ['Kredit On-Us (%)', exKreditOnUs, setExKreditOnUs],
+                  ['Kredit Off-Us (%)', exKreditOffUs, setExKreditOffUs],
+                ] as [string, string, React.Dispatch<React.SetStateAction<string>>][]).map(([label, val, set]) => (
+                  <div key={label}>
+                    <label className="text-xs text-slate-500 font-semibold block mb-1">{label}</label>
+                    <input
+                      type="number" step="0.01" min="0" max="10" value={val}
+                      onChange={e => set(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-200"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2">
+                <label className="text-xs text-slate-500 font-semibold block mb-1">QRIS (%)</label>
+                <input
+                  type="number" step="0.01" min="0" max="10" value={exQris}
+                  onChange={e => setExQris(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-200"
+                />
+              </div>
             </div>
           )}
         </div>
@@ -397,11 +413,11 @@ export default function NegotiationPage() {
                     {[
                       {
                         icon: '💳',
-                        text: `Debit On-Us jauh lebih hemat: ${mDebitOnUs}% vs ${exDebit}% (bank existing)`,
+                        text: `Debit On-Us lebih hemat: Mandiri ${mDebitOnUs}% vs bank existing ${exDebitOnUs}%`,
                       },
                       {
                         icon: '🔄',
-                        text: `Kredit lebih kompetitif dengan Mandiri: On-Us ${mKreditOnUs}% vs ${exKredit}%`,
+                        text: `Kredit On-Us lebih kompetitif: Mandiri ${mKreditOnUs}% vs bank existing ${exKreditOnUs}%`,
                       },
                       {
                         icon: '📱',
