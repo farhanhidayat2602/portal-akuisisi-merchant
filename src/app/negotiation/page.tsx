@@ -2,13 +2,15 @@
 
 import { useState, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Navbar } from '@/components/Navbar'
 import {
   Calculator, TrendingUp, PiggyBank, Calendar,
   ArrowRight, Clock, CheckCircle2, Info,
-  ChevronDown, ChevronUp, CreditCard, Smartphone,
+  ChevronDown, ChevronUp, CreditCard, Smartphone, FileText,
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
+import jsPDF from 'jspdf'
 
 // Format dengan 1 desimal untuk kartu perbandingan biaya agar tidak misleading
 // misal Rp 2.3jt vs Rp 1.7jt — bukan keduanya "Rp 2jt"
@@ -36,8 +38,8 @@ function PaymentPattern({ qrisPct, setQrisPct, debitPct, setDebitPct,
       {/* QRIS vs EDC */}
       <div>
         <div className="flex justify-between text-xs font-semibold mb-1">
-          <span className="flex items-center gap-1 text-green-600"><Smartphone size={10} /> QRIS {qrisPct}%</span>
-          <span className="flex items-center gap-1 text-blue-600"><CreditCard size={10} /> Kartu (EDC) {edcPct}%</span>
+          <span className="flex items-center gap-1 text-green-600"><Smartphone size={10} /> QRIS EDC {qrisPct}%</span>
+          <span className="flex items-center gap-1 text-blue-600"><CreditCard size={10} /> Kartu EDC {edcPct}%</span>
         </div>
         <div className="relative h-7 flex items-center">
           <div className="absolute inset-x-0 h-2.5 rounded-full overflow-hidden flex">
@@ -137,15 +139,21 @@ function RateInputs({ rates, ringColor }: {
 }
 
 // ── Main page ────────────────────────────────────────────────────────────────
+const BANKS = ['BCA', 'BRI', 'BNI', 'CIMB', 'BTN', 'Danamon', 'Lainnya']
+
 function NegotiationContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
 
   const [volume, setVolume] = useState(() => {
     const v = searchParams.get('volume')
     return v ? v.replace(/\D/g, '') : ''
   })
   const merchantId = searchParams.get('merchantId')
+
+  // Selected bank (Step 2)
+  const [selectedBank, setSelectedBank] = useState('')
 
   // ── Pola Pembayaran Bank Lain ─────────────────────────────────────────────
   const [exQrisPct, setExQrisPct]             = useState(40)
@@ -239,6 +247,227 @@ function NegotiationContent() {
 
   const goBack = () => merchantId ? router.push(`/merchant/${merchantId}`) : router.back()
 
+  function handleDownloadPDF() {
+    if (!calc) return
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const W = 210
+    const m = 14          // margin
+    const cW = W - m * 2  // content width
+    let y = 0
+
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
+
+    // ── Header bar ────────────────────────────────────────────────────────────
+    doc.setFillColor(0, 59, 121)
+    doc.rect(0, 0, W, 36, 'F')
+    doc.setFillColor(245, 166, 35)
+    doc.rect(0, 36, W, 3, 'F')
+
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(15)
+    doc.text('SIMULASI PENGHEMATAN BIAYA EDC', m, 13)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Bank Mandiri — Dokumen Negosiasi untuk Calon Merchant', m, 20)
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    doc.setFontSize(8)
+    doc.text(`Tanggal: ${today}`, m, 27)
+    if (session?.user?.name) {
+      doc.text(`Relationship Officer: ${session.user.name}`, W - m, 27, { align: 'right' })
+    }
+    y = 46
+
+    // ── Info box ──────────────────────────────────────────────────────────────
+    doc.setFillColor(240, 245, 255)
+    doc.roundedRect(m, y, cW, 18, 3, 3, 'F')
+    doc.setTextColor(0, 59, 121)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.text('TOTAL OMZET MERCHANT / BULAN', m + 4, y + 6)
+    doc.setFontSize(14)
+    doc.text(fmt(vol), m + 4, y + 14)
+    if (selectedBank) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 120)
+      doc.text(`Bank Existing: ${selectedBank}`, W - m - 4, y + 14, { align: 'right' })
+    }
+    y += 24
+
+    // ── Section title ──────────────────────────────────────────────────────────
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(30, 30, 50)
+    doc.text('1. PERBANDINGAN BIAYA TRANSAKSI', m, y)
+    y += 5
+
+    // Table header
+    const c1 = m, c2 = m + 68, c3 = m + 130
+    const rH = 9
+
+    const drawTableRow = (label: string, ex: string, man: string, isHeader = false, highlight = false) => {
+      if (isHeader) {
+        doc.setFillColor(0, 59, 121)
+        doc.rect(m, y, cW, rH, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+      } else if (highlight) {
+        doc.setFillColor(220, 252, 231)
+        doc.rect(m, y, cW, rH, 'F')
+        doc.setTextColor(22, 101, 52)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+      } else {
+        doc.setFillColor(248, 250, 252)
+        doc.rect(m, y, cW, rH, 'F')
+        doc.setTextColor(50, 50, 70)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+      }
+      doc.text(label, c1 + 3, y + 6)
+      doc.text(ex,    c2 + 3, y + 6)
+      doc.text(man,   c3 + 3, y + 6)
+      // borders
+      doc.setDrawColor(220, 220, 230)
+      doc.rect(m, y, cW, rH)
+      doc.line(c2, y, c2, y + rH)
+      doc.line(c3, y, c3, y + rH)
+      y += rH
+    }
+
+    const exEdcPct = 100 - exQrisPct
+    const mEdcPct  = 100 - mPatQrisPct
+
+    drawTableRow('Komponen', `🏦 ${selectedBank || 'Bank Existing'}`, '🏧 Bank Mandiri', true)
+    drawTableRow(`QRIS EDC (${exQrisPct}% / ${mPatQrisPct}%)`, fmt(calc.exQrisVol), fmt(calc.mQrisVol))
+    drawTableRow(`Kartu EDC (${exEdcPct}% / ${mEdcPct}%)`, fmt(calc.exEdcVol), fmt(calc.mEdcVol))
+
+    // Tarif row
+    const exTarifStr = `On-Us ${exDebitOnUs}% / ${exKreditOnUs}%`
+    const mTarifStr  = `On-Us ${mDebitOnUs}% / ${mKreditOnUs}%`
+    drawTableRow(`Tarif (Debit/Kredit On-Us)`, exTarifStr, mTarifStr)
+
+    // Total biaya — highlighted red vs blue
+    doc.setFillColor(254, 226, 226)
+    doc.rect(m, y, (cW) / 2, rH, 'F')
+    doc.setFillColor(219, 234, 254)
+    doc.rect(m + cW / 2, y, cW / 2, rH, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(30, 30, 50)
+    doc.text('TOTAL BIAYA / BULAN', c1 + 3, y + 6)
+    doc.setTextColor(185, 28, 28)
+    doc.text(fmt(calc.existingTotal), c2 + 3, y + 6)
+    doc.setTextColor(0, 59, 121)
+    doc.text(fmt(calc.mandiriTotal), c3 + 3, y + 6)
+    doc.setDrawColor(220, 220, 230)
+    doc.rect(m, y, cW, rH)
+    doc.line(c2, y, c2, y + rH)
+    doc.line(c3, y, c3, y + rH)
+    y += rH + 6
+
+    // ── Savings highlight ─────────────────────────────────────────────────────
+    doc.setFillColor(22, 163, 74)
+    doc.roundedRect(m, y, cW, 32, 4, 4, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.text('💰  MERCHANT BISA HEMAT', W / 2, y + 8, { align: 'center' })
+    doc.setFontSize(20)
+    doc.text(fmt(calc.savingsPerMonth), W / 2, y + 20, { align: 'center' })
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.text(`per bulan  ·  ${calc.savingsPct.toFixed(1)}% lebih hemat dari sekarang`, W / 2, y + 27, { align: 'center' })
+    y += 38
+
+    // ── Proyeksi ──────────────────────────────────────────────────────────────
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(30, 30, 50)
+    doc.text('2. PROYEKSI PENGHEMATAN', m, y)
+    y += 5
+
+    const proyData = [
+      ['Periode', 'Penghematan'],
+      ['1 Bulan',  fmt(calc.savingsPerMonth)],
+      ['3 Bulan',  fmt(calc.savingsPerMonth * 3)],
+      ['6 Bulan',  fmt(calc.savings6Month)],
+      ['1 Tahun',  fmt(calc.savings1Year)],
+    ]
+    proyData.forEach((row, i) => {
+      if (i === 0) {
+        doc.setFillColor(0, 59, 121)
+        doc.rect(m, y, cW / 2, rH, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+      } else {
+        doc.setFillColor(i % 2 === 0 ? 240 : 248, i % 2 === 0 ? 245 : 250, i % 2 === 0 ? 255 : 252)
+        doc.rect(m, y, cW / 2, rH, 'F')
+        doc.setTextColor(50, 50, 70)
+        doc.setFont('helvetica', i === proyData.length - 1 ? 'bold' : 'normal')
+        doc.setFontSize(8)
+        if (i === proyData.length - 1) doc.setTextColor(22, 101, 52)
+      }
+      doc.text(row[0], m + 3, y + 6)
+      doc.text(row[1], m + cW / 2 - 3, y + 6, { align: 'right' })
+      doc.setDrawColor(220, 220, 230)
+      doc.rect(m, y, cW / 2, rH)
+      y += rH
+    })
+    y += 6
+
+    // ── Keunggulan Mandiri ─────────────────────────────────────────────────────
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(30, 30, 50)
+    doc.text('3. KEUNGGULAN MANDIRI', m, y)
+    y += 4
+
+    const insights = [
+      `✓  Tarif Debit On-Us lebih rendah: Mandiri ${mDebitOnUs}% vs ${selectedBank || 'bank existing'} ${exDebitOnUs}%`,
+      `✓  Tarif Kredit On-Us lebih kompetitif: Mandiri ${mKreditOnUs}% vs ${selectedBank || 'bank existing'} ${exKreditOnUs}%`,
+      `✓  Jaringan nasabah Mandiri luas — lebih banyak transaksi On-Us`,
+      `✓  Hemat ${fmt(calc.savingsPerMonth)}/bulan tanpa perlu naikkan omzet`,
+    ]
+    insights.forEach(text => {
+      doc.setFillColor(235, 245, 255)
+      doc.roundedRect(m, y, cW, 9, 2, 2, 'F')
+      doc.setTextColor(0, 59, 121)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.text(text, m + 3, y + 6)
+      y += 11
+    })
+    y += 4
+
+    // ── CTA ────────────────────────────────────────────────────────────────────
+    doc.setFillColor(245, 166, 35)
+    doc.roundedRect(m, y, cW, 14, 3, 3, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(0, 59, 121)
+    doc.text('Bergabunglah dengan Mandiri — Hemat Lebih, Untung Lebih!', W / 2, y + 9, { align: 'center' })
+    y += 20
+
+    // ── Footer ──────────────────────────────────────────────────────────────────
+    doc.setFillColor(0, 59, 121)
+    doc.rect(0, 280, W, 17, 'F')
+    doc.setTextColor(180, 200, 230)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.text('Dokumen ini merupakan simulasi berdasarkan estimasi dan tarif umum pasar. Hasil aktual dapat berbeda sesuai kebijakan bank terkait.', W / 2, 286, { align: 'center' })
+    doc.setTextColor(245, 166, 35)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.text('PT BANK MANDIRI (PERSERO) Tbk.', W / 2, 292, { align: 'center' })
+
+    doc.save(`simulasi-hemat-mandiri-${new Date().toISOString().slice(0, 10)}.pdf`)
+  }
+
   const THUMB = '[&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md'
 
   return (
@@ -288,18 +517,42 @@ function NegotiationContent() {
           <p className="text-xs text-slate-400 mt-1.5">💡 &quot;Rata-rata omzet per bulan berapa pak?&quot;</p>
         </div>
 
-        {/* Step 2a: Pola Pembayaran Bank Lain */}
+        {/* Step 2a: Pola Pembayaran EDC Bank Lain */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-bold">2</span>
             </div>
             <div>
-              <p className="font-bold text-slate-800 text-sm">Pola Pembayaran Bank Lain</p>
-              <p className="text-xs text-slate-400">Komposisi transaksi merchant saat ini</p>
+              <p className="font-bold text-slate-800 text-sm">Pola Pembayaran EDC Bank Lain</p>
+              <p className="text-xs text-slate-400">
+                {selectedBank ? `Merchant saat ini pakai ${selectedBank}` : 'Komposisi transaksi merchant saat ini'}
+              </p>
             </div>
             <span className="ml-auto text-lg">🏦</span>
           </div>
+
+          {/* Bank selector */}
+          <div className="mb-3">
+            <p className="text-xs font-bold text-slate-600 mb-2">Bank Existing Merchant</p>
+            <div className="flex flex-wrap gap-1.5">
+              {BANKS.map(b => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setSelectedBank(prev => prev === b ? '' : b)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
+                    selectedBank === b
+                      ? 'bg-red-500 text-white border-red-500'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-red-300'
+                  }`}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <PaymentPattern
             qrisPct={exQrisPct} setQrisPct={setExQrisPct}
             debitPct={exDebitPct} setDebitPct={setExDebitPct}
@@ -317,7 +570,7 @@ function NegotiationContent() {
               <span className="text-white text-xs font-bold">3</span>
             </div>
             <div>
-              <p className="font-bold text-slate-800 text-sm">Pola Pembayaran Mandiri</p>
+              <p className="font-bold text-slate-800 text-sm">Pola Pembayaran EDC Mandiri</p>
               <p className="text-xs text-slate-400">Estimasi komposisi setelah pindah ke Mandiri</p>
             </div>
             <span className="ml-auto text-lg">🏧</span>
@@ -395,14 +648,14 @@ function NegotiationContent() {
               <div className="grid grid-cols-2 gap-2">
                 {/* Bank Lain */}
                 <div className="bg-red-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-red-500 mb-2">🏦 Bank Lain</p>
+                  <p className="text-xs font-bold text-red-500 mb-2">🏦 {selectedBank || 'Bank Lain'}</p>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">QRIS</span>
                       <span className="font-semibold text-green-700">{formatRupiah(calc.exQrisVol)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-500">EDC</span>
+                      <span className="text-slate-500">Kartu</span>
                       <span className="font-semibold text-blue-700">{formatRupiah(calc.exEdcVol)}</span>
                     </div>
                   </div>
@@ -416,7 +669,7 @@ function NegotiationContent() {
                       <span className="font-semibold text-green-700">{formatRupiah(calc.mQrisVol)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-500">EDC</span>
+                      <span className="text-slate-500">Kartu</span>
                       <span className="font-semibold text-blue-700">{formatRupiah(calc.mEdcVol)}</span>
                     </div>
                   </div>
@@ -497,6 +750,12 @@ function NegotiationContent() {
                     className="w-full bg-mandiri-600/60 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-mandiri-600 transition-colors"
                   >
                     <Clock size={14} /> Jadwalkan Follow Up
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+                  >
+                    <FileText size={14} /> Download PDF untuk Merchant
                   </button>
                 </div>
               </>
