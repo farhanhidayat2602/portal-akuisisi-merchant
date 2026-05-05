@@ -250,88 +250,110 @@ function NegotiationContent() {
   function handleDownloadPDF() {
     if (!calc) return
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const W = 210
-    const m = 14          // margin
-    const cW = W - m * 2  // content width
-    let y = 0
+    const W  = 210
+    const H  = 297
+    const m  = 14
+    const cW = W - m * 2
+    const rH = 8   // table row height
+    let y    = 0
+
+    // Footer is always pinned — content must stay above CONTENT_MAX
+    const FOOTER_Y   = 272
+    const CTA_Y      = 256
+    const CONTENT_MAX = 252
 
     const fmt = (n: number) =>
       new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
 
-    // ── Header bar ────────────────────────────────────────────────────────────
+    // ── HEADER ───────────────────────────────────────────────────────────────
     doc.setFillColor(0, 59, 121)
-    doc.rect(0, 0, W, 36, 'F')
+    doc.rect(0, 0, W, 38, 'F')
     doc.setFillColor(245, 166, 35)
-    doc.rect(0, 36, W, 3, 'F')
+    doc.rect(0, 38, W, 3.5, 'F')
 
     doc.setTextColor(255, 255, 255)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(15)
+    doc.setFontSize(16)
     doc.text('SIMULASI PENGHEMATAN BIAYA EDC', m, 13)
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    doc.text('Bank Mandiri — Dokumen Negosiasi untuk Calon Merchant', m, 20)
+    doc.text('Bank Mandiri  -  Dokumen Negosiasi untuk Calon Merchant', m, 21)
     const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     doc.setFontSize(8)
-    doc.text(`Tanggal: ${today}`, m, 27)
+    doc.text('Tanggal: ' + today, m, 29)
     if (session?.user?.name) {
-      doc.text(`Relationship Officer: ${session.user.name}`, W - m, 27, { align: 'right' })
+      doc.text('Relationship Officer: ' + session.user.name, W - m, 29, { align: 'right' })
     }
-    y = 46
 
-    // ── Info box ──────────────────────────────────────────────────────────────
-    doc.setFillColor(240, 245, 255)
+    // ── INFO BOX ─────────────────────────────────────────────────────────────
+    y = 48
+    doc.setFillColor(235, 243, 255)
     doc.roundedRect(m, y, cW, 18, 3, 3, 'F')
+    doc.setDrawColor(180, 210, 250)
+    doc.roundedRect(m, y, cW, 18, 3, 3, 'S')
     doc.setTextColor(0, 59, 121)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
+    doc.setFontSize(7.5)
     doc.text('TOTAL OMZET MERCHANT / BULAN', m + 4, y + 6)
-    doc.setFontSize(14)
+    doc.setFontSize(15)
     doc.text(fmt(vol), m + 4, y + 14)
     if (selectedBank) {
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8)
-      doc.setTextColor(100, 100, 120)
-      doc.text(`Bank Existing: ${selectedBank}`, W - m - 4, y + 14, { align: 'right' })
+      doc.setTextColor(80, 100, 130)
+      doc.text('Bank Existing: ' + selectedBank, W - m - 4, y + 14, { align: 'right' })
     }
-    y += 24
+    y += 23
 
-    // ── Section title ──────────────────────────────────────────────────────────
+    // ── SECTION 1: PERBANDINGAN BIAYA ────────────────────────────────────────
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(30, 30, 50)
-    doc.text('1. PERBANDINGAN BIAYA TRANSAKSI', m, y)
+    doc.setFontSize(9.5)
+    doc.setTextColor(20, 30, 50)
+    doc.text('1.  PERBANDINGAN BIAYA TRANSAKSI', m, y)
     y += 5
 
-    // Table header
-    const c1 = m, c2 = m + 68, c3 = m + 130
-    const rH = 9
+    const c1 = m, c2 = m + 70, c3 = m + 132
 
-    const drawTableRow = (label: string, ex: string, man: string, isHeader = false, highlight = false) => {
-      if (isHeader) {
+    const drawRow = (
+      label: string, ex: string, man: string,
+      style: 'header' | 'normal' | 'total' = 'normal'
+    ) => {
+      if (style === 'header') {
         doc.setFillColor(0, 59, 121)
         doc.rect(m, y, cW, rH, 'F')
         doc.setTextColor(255, 255, 255)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(8)
-      } else if (highlight) {
-        doc.setFillColor(220, 252, 231)
-        doc.rect(m, y, cW, rH, 'F')
-        doc.setTextColor(22, 101, 52)
+      } else if (style === 'total') {
+        doc.setFillColor(254, 226, 226)
+        doc.rect(m, y, c3 - m, rH, 'F')
+        doc.setFillColor(219, 234, 254)
+        doc.rect(c3, y, m + cW - c3, rH, 'F')
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(8)
+        doc.setTextColor(20, 30, 50)
+        doc.text(label, c1 + 3, y + 5.5)
+        doc.setTextColor(185, 28, 28)
+        doc.text(ex, c2 + 3, y + 5.5)
+        doc.setTextColor(0, 59, 121)
+        doc.text(man, c3 + 3, y + 5.5)
+        doc.setDrawColor(200, 210, 225)
+        doc.rect(m, y, cW, rH)
+        doc.line(c2, y, c2, y + rH)
+        doc.line(c3, y, c3, y + rH)
+        y += rH
+        return
       } else {
-        doc.setFillColor(248, 250, 252)
+        doc.setFillColor(y % 16 < 8 ? 248 : 242, y % 16 < 8 ? 250 : 246, y % 16 < 8 ? 252 : 250)
         doc.rect(m, y, cW, rH, 'F')
-        doc.setTextColor(50, 50, 70)
+        doc.setTextColor(40, 50, 70)
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(8)
       }
-      doc.text(label, c1 + 3, y + 6)
-      doc.text(ex,    c2 + 3, y + 6)
-      doc.text(man,   c3 + 3, y + 6)
-      // borders
-      doc.setDrawColor(220, 220, 230)
+      doc.text(label, c1 + 3, y + 5.5)
+      doc.text(ex,    c2 + 3, y + 5.5)
+      doc.text(man,   c3 + 3, y + 5.5)
+      doc.setDrawColor(200, 210, 225)
       doc.rect(m, y, cW, rH)
       doc.line(c2, y, c2, y + rH)
       doc.line(c3, y, c3, y + rH)
@@ -340,132 +362,124 @@ function NegotiationContent() {
 
     const exEdcPct = 100 - exQrisPct
     const mEdcPct  = 100 - mPatQrisPct
+    const bankLabel = selectedBank || 'Bank Existing'
 
-    drawTableRow('Komponen', `🏦 ${selectedBank || 'Bank Existing'}`, '🏧 Bank Mandiri', true)
-    drawTableRow(`QRIS EDC (${exQrisPct}% / ${mPatQrisPct}%)`, fmt(calc.exQrisVol), fmt(calc.mQrisVol))
-    drawTableRow(`Kartu EDC (${exEdcPct}% / ${mEdcPct}%)`, fmt(calc.exEdcVol), fmt(calc.mEdcVol))
-
-    // Tarif row
-    const exTarifStr = `On-Us ${exDebitOnUs}% / ${exKreditOnUs}%`
-    const mTarifStr  = `On-Us ${mDebitOnUs}% / ${mKreditOnUs}%`
-    drawTableRow(`Tarif (Debit/Kredit On-Us)`, exTarifStr, mTarifStr)
-
-    // Total biaya — highlighted red vs blue
-    doc.setFillColor(254, 226, 226)
-    doc.rect(m, y, (cW) / 2, rH, 'F')
-    doc.setFillColor(219, 234, 254)
-    doc.rect(m + cW / 2, y, cW / 2, rH, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.setTextColor(30, 30, 50)
-    doc.text('TOTAL BIAYA / BULAN', c1 + 3, y + 6)
-    doc.setTextColor(185, 28, 28)
-    doc.text(fmt(calc.existingTotal), c2 + 3, y + 6)
-    doc.setTextColor(0, 59, 121)
-    doc.text(fmt(calc.mandiriTotal), c3 + 3, y + 6)
-    doc.setDrawColor(220, 220, 230)
-    doc.rect(m, y, cW, rH)
-    doc.line(c2, y, c2, y + rH)
-    doc.line(c3, y, c3, y + rH)
-    y += rH + 6
-
-    // ── Savings highlight ─────────────────────────────────────────────────────
-    doc.setFillColor(22, 163, 74)
-    doc.roundedRect(m, y, cW, 32, 4, 4, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.text('💰  MERCHANT BISA HEMAT', W / 2, y + 8, { align: 'center' })
-    doc.setFontSize(20)
-    doc.text(fmt(calc.savingsPerMonth), W / 2, y + 20, { align: 'center' })
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.text(`per bulan  ·  ${calc.savingsPct.toFixed(1)}% lebih hemat dari sekarang`, W / 2, y + 27, { align: 'center' })
-    y += 38
-
-    // ── Proyeksi ──────────────────────────────────────────────────────────────
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(30, 30, 50)
-    doc.text('2. PROYEKSI PENGHEMATAN', m, y)
+    drawRow('Komponen', bankLabel, 'Bank Mandiri', 'header')
+    drawRow('QRIS EDC  (' + exQrisPct + '% / ' + mPatQrisPct + '%)', fmt(calc.exQrisVol), fmt(calc.mQrisVol))
+    drawRow('Kartu EDC  (' + exEdcPct + '% / ' + mEdcPct + '%)', fmt(calc.exEdcVol), fmt(calc.mEdcVol))
+    drawRow('Tarif Debit/Kredit On-Us', 'On-Us ' + exDebitOnUs + '% / ' + exKreditOnUs + '%', 'On-Us ' + mDebitOnUs + '% / ' + mKreditOnUs + '%')
+    drawRow('TOTAL BIAYA / BULAN', fmt(calc.existingTotal), fmt(calc.mandiriTotal), 'total')
     y += 5
 
-    const proyData = [
-      ['Periode', 'Penghematan'],
-      ['1 Bulan',  fmt(calc.savingsPerMonth)],
-      ['3 Bulan',  fmt(calc.savingsPerMonth * 3)],
-      ['6 Bulan',  fmt(calc.savings6Month)],
-      ['1 Tahun',  fmt(calc.savings1Year)],
-    ]
-    proyData.forEach((row, i) => {
-      if (i === 0) {
+    // ── SAVINGS BOX ──────────────────────────────────────────────────────────
+    doc.setFillColor(22, 163, 74)
+    doc.roundedRect(m, y, cW, 28, 4, 4, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8.5)
+    doc.text('MERCHANT BISA HEMAT', W / 2, y + 8, { align: 'center' })
+    doc.setFontSize(22)
+    doc.text(fmt(calc.savingsPerMonth), W / 2, y + 19, { align: 'center' })
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.text('per bulan  -  ' + calc.savingsPct.toFixed(1) + '% lebih hemat dari sekarang', W / 2, y + 25, { align: 'center' })
+    y += 33
+
+    // ── SECTION 2: PROYEKSI ──────────────────────────────────────────────────
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9.5)
+    doc.setTextColor(20, 30, 50)
+    doc.text('2.  PROYEKSI PENGHEMATAN', m, y)
+    y += 5
+
+    const tabelW = cW * 0.55
+    ;[
+      ['Periode', 'Penghematan', 'header'],
+      ['1 Bulan',  fmt(calc.savingsPerMonth), 'normal'],
+      ['3 Bulan',  fmt(calc.savingsPerMonth * 3), 'normal'],
+      ['6 Bulan',  fmt(calc.savings6Month), 'normal'],
+      ['1 Tahun',  fmt(calc.savings1Year), 'last'],
+    ].forEach(([period, val, type]) => {
+      if (type === 'header') {
         doc.setFillColor(0, 59, 121)
-        doc.rect(m, y, cW / 2, rH, 'F')
+        doc.rect(m, y, tabelW, rH, 'F')
         doc.setTextColor(255, 255, 255)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(8)
-      } else {
-        doc.setFillColor(i % 2 === 0 ? 240 : 248, i % 2 === 0 ? 245 : 250, i % 2 === 0 ? 255 : 252)
-        doc.rect(m, y, cW / 2, rH, 'F')
-        doc.setTextColor(50, 50, 70)
-        doc.setFont('helvetica', i === proyData.length - 1 ? 'bold' : 'normal')
+      } else if (type === 'last') {
+        doc.setFillColor(220, 252, 231)
+        doc.rect(m, y, tabelW, rH, 'F')
+        doc.setTextColor(21, 128, 61)
+        doc.setFont('helvetica', 'bold')
         doc.setFontSize(8)
-        if (i === proyData.length - 1) doc.setTextColor(22, 101, 52)
+      } else {
+        doc.setFillColor(248, 250, 252)
+        doc.rect(m, y, tabelW, rH, 'F')
+        doc.setTextColor(40, 50, 70)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
       }
-      doc.text(row[0], m + 3, y + 6)
-      doc.text(row[1], m + cW / 2 - 3, y + 6, { align: 'right' })
-      doc.setDrawColor(220, 220, 230)
-      doc.rect(m, y, cW / 2, rH)
+      doc.text(period, m + 3, y + 5.5)
+      doc.text(val, m + tabelW - 3, y + 5.5, { align: 'right' })
+      doc.setDrawColor(200, 210, 225)
+      doc.rect(m, y, tabelW, rH)
       y += rH
     })
-    y += 6
+    y += 5
 
-    // ── Keunggulan Mandiri ─────────────────────────────────────────────────────
+    // ── SECTION 3: KEUNGGULAN ────────────────────────────────────────────────
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(30, 30, 50)
-    doc.text('3. KEUNGGULAN MANDIRI', m, y)
+    doc.setFontSize(9.5)
+    doc.setTextColor(20, 30, 50)
+    doc.text('3.  KEUNGGULAN MANDIRI', m, y)
     y += 4
 
+    const insightH = 8
     const insights = [
-      `✓  Tarif Debit On-Us lebih rendah: Mandiri ${mDebitOnUs}% vs ${selectedBank || 'bank existing'} ${exDebitOnUs}%`,
-      `✓  Tarif Kredit On-Us lebih kompetitif: Mandiri ${mKreditOnUs}% vs ${selectedBank || 'bank existing'} ${exKreditOnUs}%`,
-      `✓  Jaringan nasabah Mandiri luas — lebih banyak transaksi On-Us`,
-      `✓  Hemat ${fmt(calc.savingsPerMonth)}/bulan tanpa perlu naikkan omzet`,
+      'Tarif Debit On-Us lebih rendah: Mandiri ' + mDebitOnUs + '% vs ' + bankLabel + ' ' + exDebitOnUs + '%',
+      'Tarif Kredit On-Us lebih kompetitif: Mandiri ' + mKreditOnUs + '% vs ' + bankLabel + ' ' + exKreditOnUs + '%',
+      'Jaringan nasabah Mandiri luas — lebih banyak transaksi On-Us otomatis',
+      'Hemat ' + fmt(calc.savingsPerMonth) + ' per bulan tanpa perlu menaikkan omzet',
     ]
     insights.forEach(text => {
-      doc.setFillColor(235, 245, 255)
-      doc.roundedRect(m, y, cW, 9, 2, 2, 'F')
+      doc.setFillColor(235, 244, 255)
+      doc.roundedRect(m, y, cW, insightH, 2, 2, 'F')
+      doc.setDrawColor(180, 210, 250)
+      doc.roundedRect(m, y, cW, insightH, 2, 2, 'S')
+      // bullet
+      doc.setFillColor(0, 59, 121)
+      doc.circle(m + 4, y + 4, 1.2, 'F')
       doc.setTextColor(0, 59, 121)
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8)
-      doc.text(text, m + 3, y + 6)
-      y += 11
+      doc.setFontSize(7.5)
+      doc.text(text, m + 8, y + 5.5)
+      y += insightH + 2
     })
-    y += 4
 
-    // ── CTA ────────────────────────────────────────────────────────────────────
+    // ── CTA — pinned position ────────────────────────────────────────────────
     doc.setFillColor(245, 166, 35)
-    doc.roundedRect(m, y, cW, 14, 3, 3, 'F')
+    doc.roundedRect(m, CTA_Y, cW, 13, 3, 3, 'F')
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
+    doc.setFontSize(10)
     doc.setTextColor(0, 59, 121)
-    doc.text('Bergabunglah dengan Mandiri — Hemat Lebih, Untung Lebih!', W / 2, y + 9, { align: 'center' })
-    y += 20
+    doc.text('Bergabunglah dengan Mandiri  -  Hemat Lebih, Untung Lebih!', W / 2, CTA_Y + 8.5, { align: 'center' })
 
-    // ── Footer ──────────────────────────────────────────────────────────────────
+    // ── FOOTER — pinned position ─────────────────────────────────────────────
     doc.setFillColor(0, 59, 121)
-    doc.rect(0, 280, W, 17, 'F')
-    doc.setTextColor(180, 200, 230)
+    doc.rect(0, FOOTER_Y, W, H - FOOTER_Y, 'F')
+    doc.setTextColor(160, 190, 225)
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7)
-    doc.text('Dokumen ini merupakan simulasi berdasarkan estimasi dan tarif umum pasar. Hasil aktual dapat berbeda sesuai kebijakan bank terkait.', W / 2, 286, { align: 'center' })
+    doc.setFontSize(6.5)
+    doc.text(
+      'Dokumen ini merupakan simulasi berdasarkan estimasi dan tarif umum pasar. Hasil aktual dapat berbeda sesuai kebijakan bank terkait.',
+      W / 2, FOOTER_Y + 9, { align: 'center' }
+    )
     doc.setTextColor(245, 166, 35)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(8)
-    doc.text('PT BANK MANDIRI (PERSERO) Tbk.', W / 2, 292, { align: 'center' })
+    doc.text('PT BANK MANDIRI (PERSERO) Tbk.', W / 2, FOOTER_Y + 17, { align: 'center' })
 
-    doc.save(`simulasi-hemat-mandiri-${new Date().toISOString().slice(0, 10)}.pdf`)
+    doc.save('simulasi-hemat-mandiri-' + new Date().toISOString().slice(0, 10) + '.pdf')
   }
 
   const THUMB = '[&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md'
