@@ -28,7 +28,7 @@ const DynamicMap = dynamic(() => import('@/components/MapComponent'), {
 })
 
 type SortKey = 'reviews' | 'rating' | 'distance' | 'volume'
-type FilterStatus = 'ALL' | 'AVAILABLE' | 'INTERESTED' | 'FOLLOW_UP' | 'REJECTED' | 'ACQUIRED'
+type FilterStatus = 'ALL' | 'AVAILABLE' | 'LOCKED' | 'INTERESTED' | 'FOLLOW_UP' | 'REJECTED' | 'ACQUIRED'
 type ViewMode = 'split' | 'map' | 'list'
 
 export default function DashboardPage({ params }: { params: { branchId: string } }) {
@@ -175,17 +175,24 @@ export default function DashboardPage({ params }: { params: { branchId: string }
       <div className="bg-mandiri-700 px-4 pb-3">
         <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto no-scrollbar">
           {[
-            { label: 'Tersedia',    value: stats.available,  color: 'bg-green-500' },
-            { label: 'Dikunjungi', value: stats.locked,     color: 'bg-yellow-400' },
-            { label: 'Tertarik',   value: stats.interested, color: 'bg-purple-500' },
-            { label: 'Akuisisi',   value: stats.acquired,   color: 'bg-mandiri-green' },
-            { label: 'Viral',       value: stats.viral,     color: 'bg-pink-500' },
+            { label: 'Tersedia',   value: stats.available,  dot: 'bg-green-500',        action: () => setFilterStatus(f => f === 'AVAILABLE' ? 'ALL' : 'AVAILABLE'), active: filterStatus === 'AVAILABLE' },
+            { label: 'Dikunjungi', value: stats.locked,     dot: 'bg-yellow-400',        action: () => setFilterStatus(f => f === 'LOCKED'    ? 'ALL' : 'LOCKED'),    active: filterStatus === 'LOCKED'    },
+            { label: 'Tertarik',   value: stats.interested, dot: 'bg-purple-500',        action: () => setFilterStatus(f => f === 'INTERESTED' ? 'ALL' : 'INTERESTED'), active: filterStatus === 'INTERESTED' },
+            { label: 'Akuisisi',   value: stats.acquired,   dot: 'bg-mandiri-green',     action: () => setFilterStatus(f => f === 'ACQUIRED'  ? 'ALL' : 'ACQUIRED'),  active: filterStatus === 'ACQUIRED'  },
+            { label: 'Viral',      value: stats.viral,      dot: 'bg-pink-500',          action: () => setFilterViral(v => !v),                                       active: filterViral                  },
           ].map(s => (
-            <div key={s.label} className="bg-mandiri-600 rounded-xl px-3 py-2 flex items-center gap-2 shrink-0">
-              <span className={cn('w-2 h-2 rounded-full shrink-0', s.color)} />
+            <button
+              key={s.label}
+              onClick={s.action}
+              className={cn(
+                'rounded-xl px-3 py-2 flex items-center gap-2 shrink-0 transition-all active:scale-95',
+                s.active ? 'bg-white/25 ring-2 ring-white/60' : 'bg-mandiri-600 hover:bg-mandiri-500'
+              )}
+            >
+              <span className={cn('w-2 h-2 rounded-full shrink-0', s.dot)} />
               <span className="text-white text-xs font-semibold">{s.value}</span>
               <span className="text-mandiri-200 text-xs">{s.label}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -243,7 +250,7 @@ export default function DashboardPage({ params }: { params: { branchId: string }
           <div className="max-w-6xl mx-auto mt-3 flex flex-wrap gap-2 pt-3 border-t border-slate-100">
             {/* Status filter */}
             <div className="flex gap-1.5 flex-wrap">
-              {(['ALL', 'AVAILABLE', 'INTERESTED', 'FOLLOW_UP', 'REJECTED', 'ACQUIRED'] as FilterStatus[]).map(s => (
+              {(['ALL', 'AVAILABLE', 'LOCKED', 'INTERESTED', 'FOLLOW_UP', 'REJECTED', 'ACQUIRED'] as FilterStatus[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}
