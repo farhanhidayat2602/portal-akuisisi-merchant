@@ -13,7 +13,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
-    "db:add-merchants": "tsx prisma/add-merchants.ts"
+    "db:add-merchants": "tsx prisma/add-merchants.ts",
+    "db:import-sudirman": "tsx prisma/import-sudirman.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",
