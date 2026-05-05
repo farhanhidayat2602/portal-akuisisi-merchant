@@ -28,7 +28,7 @@ const DynamicMap = dynamic(() => import('@/components/MapComponent'), {
 })
 
 type SortKey = 'reviews' | 'rating' | 'distance' | 'volume'
-type FilterStatus = 'ALL' | 'AVAILABLE' | 'INTERESTED' | 'FOLLOW_UP' | 'REJECTED'
+type FilterStatus = 'ALL' | 'AVAILABLE' | 'INTERESTED' | 'FOLLOW_UP' | 'REJECTED' | 'ACQUIRED'
 type ViewMode = 'split' | 'map' | 'list'
 
 export default function DashboardPage({ params }: { params: { branchId: string } }) {
@@ -114,6 +114,7 @@ export default function DashboardPage({ params }: { params: { branchId: string }
     available: merchants.filter(m => m.status === 'AVAILABLE').length,
     locked:    merchants.filter(m => m.status === 'LOCKED').length,
     interested: merchants.filter(m => m.status === 'INTERESTED').length,
+    acquired:  merchants.filter(m => m.status === 'ACQUIRED').length,
     viral:     merchants.filter(m => m.isViralTikTok).length,
   }
 
@@ -177,6 +178,7 @@ export default function DashboardPage({ params }: { params: { branchId: string }
             { label: 'Tersedia',    value: stats.available,  color: 'bg-green-500' },
             { label: 'Dikunjungi', value: stats.locked,     color: 'bg-yellow-400' },
             { label: 'Tertarik',   value: stats.interested, color: 'bg-purple-500' },
+            { label: 'Akuisisi',   value: stats.acquired,   color: 'bg-mandiri-green' },
             { label: 'Viral',       value: stats.viral,     color: 'bg-pink-500' },
           ].map(s => (
             <div key={s.label} className="bg-mandiri-600 rounded-xl px-3 py-2 flex items-center gap-2 shrink-0">
@@ -241,7 +243,7 @@ export default function DashboardPage({ params }: { params: { branchId: string }
           <div className="max-w-6xl mx-auto mt-3 flex flex-wrap gap-2 pt-3 border-t border-slate-100">
             {/* Status filter */}
             <div className="flex gap-1.5 flex-wrap">
-              {(['ALL', 'AVAILABLE', 'INTERESTED', 'FOLLOW_UP', 'REJECTED'] as FilterStatus[]).map(s => (
+              {(['ALL', 'AVAILABLE', 'INTERESTED', 'FOLLOW_UP', 'REJECTED', 'ACQUIRED'] as FilterStatus[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}
