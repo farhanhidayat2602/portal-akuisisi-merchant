@@ -394,7 +394,7 @@ function CalculatorContent() {
           </div>
 
           <SliderInput
-            label={`Porsi EDC: ${edcPct}% | QRIS: ${100 - edcPct}%`}
+            label={`Porsi Kartu: ${edcPct}% | QRIS: ${100 - edcPct}%`}
             value={edcPct}
             onChange={v => setEdcPct(v)}
           />
@@ -402,7 +402,7 @@ function CalculatorContent() {
           <div className="flex gap-2 mt-3">
             <div className="flex-1 p-3 bg-mandiri-50 rounded-xl text-center">
               <CreditCard size={14} className="text-mandiri-700 mx-auto mb-1" />
-              <p className="text-xs font-semibold text-mandiri-700">EDC</p>
+              <p className="text-xs font-semibold text-mandiri-700">Kartu</p>
               <p className="text-sm font-bold text-mandiri-800">{formatRupiah(vol * edcPct / 100)}</p>
             </div>
             <div className="flex-1 p-3 bg-green-50 rounded-xl text-center">
