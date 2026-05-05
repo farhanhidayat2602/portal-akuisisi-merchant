@@ -390,7 +390,7 @@ function CalculatorContent() {
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-6 h-6 bg-mandiri-700 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">2</div>
-            <h3 className="font-bold text-slate-800">Split EDC vs QRIS</h3>
+            <h3 className="font-bold text-slate-800">Split Kartu vs QRIS</h3>
           </div>
 
           <SliderInput
@@ -418,7 +418,7 @@ function CalculatorContent() {
           <div className="card p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-6 h-6 bg-mandiri-700 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">3</div>
-              <h3 className="font-bold text-slate-800">Detail Breakdown EDC</h3>
+              <h3 className="font-bold text-slate-800">Detail Breakdown Jenis Kartu</h3>
             </div>
             <div className="space-y-5">
               {/* Debit vs Kredit split */}
