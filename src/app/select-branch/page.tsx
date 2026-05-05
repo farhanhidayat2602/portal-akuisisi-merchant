@@ -18,6 +18,9 @@ export default function SelectBranchPage() {
   const [search, setSearch]       = useState('')
   const [loading, setLoading]     = useState(true)
   const [totalMerchants, setTotalMerchants] = useState(0)
+  const [merchantStats, setMerchantStats] = useState({
+    available: 0, acquired: 0, locked: 0, interested: 0, viral: 0,
+  })
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/')
@@ -27,9 +30,17 @@ export default function SelectBranchPage() {
     Promise.all([
       fetch('/api/branches').then(r => r.json()),
       fetch('/api/merchants').then(r => r.json()),
-    ]).then(([branchData, merchantData]) => {
+    ]).then(([branchData, merchantData]: [any, any[]]) => {
       setBranches(Array.isArray(branchData) ? branchData : [])
-      setTotalMerchants(Array.isArray(merchantData) ? merchantData.length : 0)
+      const merchants = Array.isArray(merchantData) ? merchantData : []
+      setTotalMerchants(merchants.length)
+      setMerchantStats({
+        available:  merchants.filter((m: any) => m.status === 'AVAILABLE').length,
+        acquired:   merchants.filter((m: any) => m.status === 'ACQUIRED').length,
+        locked:     merchants.filter((m: any) => m.status === 'LOCKED').length,
+        interested: merchants.filter((m: any) => m.status === 'INTERESTED').length,
+        viral:      merchants.filter((m: any) => m.isViralTikTok).length,
+      })
       setLoading(false)
     })
   }, [])
@@ -108,16 +119,33 @@ export default function SelectBranchPage() {
           </p>
 
           {/* Stats chips */}
-          <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="grid grid-cols-3 gap-2 mb-3">
             {[
-              { icon: Building2, label: 'Cabang',   value: branches.length,  bg: 'bg-mandiri-600/60' },
-              { icon: Store,     label: 'Merchant',  value: totalMerchants,    bg: 'bg-mandiri-600/60' },
-              { icon: MapPin,    label: 'Kota',       value: totalCities,       bg: 'bg-mandiri-600/60' },
+              { icon: Building2, label: 'Cabang',   value: branches.length },
+              { icon: Store,     label: 'Merchant',  value: totalMerchants   },
+              { icon: MapPin,    label: 'Kota',       value: totalCities      },
             ].map(s => (
-              <div key={s.label} className={`${s.bg} backdrop-blur-sm rounded-2xl p-3 text-center border border-white/10`}>
+              <div key={s.label} className="bg-mandiri-600/60 backdrop-blur-sm rounded-2xl p-3 text-center border border-white/10">
                 <s.icon size={14} className="text-mandiri-200 mx-auto mb-1" />
                 <p className="text-white font-extrabold text-lg leading-none">{s.value}</p>
                 <p className="text-mandiri-300 text-xs mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Merchant status breakdown */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {[
+              { label: 'Tersedia',   value: merchantStats.available,  dot: 'bg-green-400'  },
+              { label: 'Akuisisi',   value: merchantStats.acquired,   dot: 'bg-emerald-300' },
+              { label: 'Dikunjungi', value: merchantStats.locked,     dot: 'bg-yellow-400' },
+              { label: 'Tertarik',   value: merchantStats.interested, dot: 'bg-purple-400' },
+              { label: 'Viral',      value: merchantStats.viral,      dot: 'bg-pink-400'   },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 shrink-0 border border-white/10">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
+                <span className="text-white font-bold text-sm">{s.value}</span>
+                <span className="text-mandiri-200 text-xs">{s.label}</span>
               </div>
             ))}
           </div>
