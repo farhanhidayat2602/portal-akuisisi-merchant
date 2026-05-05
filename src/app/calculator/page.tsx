@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Navbar } from '@/components/Navbar'
 import { calculateFee, formatRupiah } from '@/lib/utils'
-import { Calculator, TrendingUp, CreditCard, Smartphone, Info, Download } from 'lucide-react'
+import { Calculator, TrendingUp, CreditCard, Smartphone, Info, Download, ChevronDown, Users, FileSpreadsheet } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { cn } from '@/lib/utils'
+import * as XLSX from 'xlsx'
 
 function NumberInput({
   label, value, onChange, sublabel, hint
@@ -67,10 +69,28 @@ const COLORS = ['#003B79', '#0064B4', '#F5A623', '#FFC84A', '#00A651']
 
 function CalculatorContent() {
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
   const defaultVolume = searchParams.get('volume') || ''
+  const merchantName = searchParams.get('merchantName') || ''
 
   // Total volume
   const [totalVolume, setTotalVolume] = useState(defaultVolume)
+
+  // Volume estimator helper
+  const [showVolumeHelper, setShowVolumeHelper] = useState(false)
+  const [avgSpend, setAvgSpend]           = useState('')
+  const [customersPerDay, setCustomersPerDay] = useState('')
+  const [operatingDays, setOperatingDays] = useState('26')
+
+  useEffect(() => {
+    if (!showVolumeHelper) return
+    const spend = parseFloat(avgSpend) || 0
+    const cust  = parseFloat(customersPerDay) || 0
+    const days  = parseFloat(operatingDays) || 26
+    if (spend > 0 && cust > 0) {
+      setTotalVolume(String(Math.round(spend * cust * days)))
+    }
+  }, [avgSpend, customersPerDay, operatingDays, showVolumeHelper])
 
   // EDC split (% of total)
   const [edcPct, setEdcPct] = useState(60)     // % of total going to EDC
@@ -121,6 +141,99 @@ function CalculatorContent() {
   }, [vol, edcPct, debitPct, debitOnUsPct, kreditOnUsPct,
       rateDebitOnUs, rateDebitOffUs, rateKreditOnUs, rateKreditOffUs, rateQris])
 
+  function handleExportExcel() {
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
+    const pct = (n: number) => `${n}%`
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+
+    const edcVol    = vol * (edcPct / 100)
+    const qrisVol   = vol * ((100 - edcPct) / 100)
+    const debitVol  = edcVol * (debitPct / 100)
+    const kreditVol = edcVol * ((100 - debitPct) / 100)
+
+    const aoa: (string | number | null)[][] = [
+      ['SIMULASI FEE-BASED INCOME — BANK MANDIRI'],
+      [],
+      ['Disiapkan oleh', session?.user?.name ?? '-', '', 'Tanggal', today],
+      merchantName ? ['Merchant', merchantName] : [],
+      [],
+      ['A. ASUMSI VOLUME TRANSAKSI'],
+      ['Keterangan', 'Nilai', 'Satuan'],
+    ]
+
+    if (showVolumeHelper && parseFloat(avgSpend) > 0 && parseFloat(customersPerDay) > 0) {
+      aoa.push(
+        ['Rata-rata Spent per Pelanggan', parseFloat(avgSpend), 'Rp'],
+        ['Jumlah Pelanggan per Hari', parseFloat(customersPerDay), 'orang'],
+        ['Hari Operasional per Bulan', parseFloat(operatingDays) || 26, 'hari'],
+        ['Total Volume Transaksi / Bulan', vol, 'Rp'],
+      )
+    } else {
+      aoa.push(['Total Volume Transaksi / Bulan', vol, 'Rp'])
+    }
+
+    aoa.push(
+      [],
+      ['B. SPLIT CHANNEL PEMBAYARAN'],
+      ['Channel', 'Porsi (%)', 'Volume (Rp)'],
+      ['EDC',  pct(edcPct),           edcVol],
+      ['QRIS', pct(100 - edcPct),     qrisVol],
+      [],
+      ['C. DETAIL BREAKDOWN EDC'],
+      ['Kategori', 'Porsi (%)', 'Volume (Rp)'],
+      ['Kartu Debit',   pct(debitPct),         debitVol],
+      ['  On-Us Debit (Mandiri)',  pct(debitOnUsPct),     debitVol * (debitOnUsPct / 100)],
+      ['  Off-Us Debit',          pct(100 - debitOnUsPct), debitVol * ((100 - debitOnUsPct) / 100)],
+      ['Kartu Kredit',  pct(100 - debitPct),   kreditVol],
+      ['  On-Us Kredit (Mandiri)', pct(kreditOnUsPct),    kreditVol * (kreditOnUsPct / 100)],
+      ['  Off-Us Kredit',         pct(100 - kreditOnUsPct), kreditVol * ((100 - kreditOnUsPct) / 100)],
+      [],
+      ['D. RINCIAN FEE PER KATEGORI'],
+      ['Kategori', 'Tarif MDR', 'Volume Transaksi (Rp)', 'Fee (Rp)'],
+      ['EDC Debit On-Us',   `${rateDebitOnUs}%`,   debitVol * (debitOnUsPct / 100),                   result.edcOnUsDebitFee],
+      ['EDC Debit Off-Us',  `${rateDebitOffUs}%`,  debitVol * ((100 - debitOnUsPct) / 100),            result.edcOffUsDebitFee],
+      ['EDC Kredit On-Us',  `${rateKreditOnUs}%`,  kreditVol * (kreditOnUsPct / 100),                  result.edcOnUsCreditFee],
+      ['EDC Kredit Off-Us', `${rateKreditOffUs}%`, kreditVol * ((100 - kreditOnUsPct) / 100),          result.edcOffUsCreditFee],
+      ['QRIS',              `${rateQris}%`,         qrisVol,                                            result.qrisFee],
+      ['TOTAL FEE / BULAN', '', '', result.totalFee],
+      [],
+      ['E. PROYEKSI PENDAPATAN FEE'],
+      ['Periode', 'Proyeksi Fee (Rp)'],
+      ['1 Bulan',  result.totalFee],
+      ['3 Bulan',  result.totalFee * 3],
+      ['6 Bulan',  result.totalFee * 6],
+      ['1 Tahun',  result.annualProjection],
+      [],
+      ['F. CATATAN UNTUK ATF'],
+      [`Merchant ini berpotensi menghasilkan fee sebesar ${fmt(result.totalFee)}/bulan atau ${fmt(result.annualProjection)}/tahun.`],
+      [result.annualProjection > 50000000
+        ? 'Rekomendasikan ke Branch Manager untuk program Merchant Premium / Sponsorship.'
+        : 'Dapat dipertimbangkan untuk program co-branding atau diskon biaya transaksi.'],
+      [],
+      ['— Dokumen ini digenerate otomatis dari Portal Akuisisi Merchant Bank Mandiri —'],
+    )
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa)
+
+    // Column widths
+    ws['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 22 }]
+
+    // Merge title cell
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Simulasi Fee-Based Income')
+    const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `simulasi-fee-${new Date().toISOString().slice(0, 10)}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const pieData = [
     { name: 'EDC Debit On-Us (0.15%)',  value: result.edcOnUsDebitFee  },
     { name: 'EDC Kredit On-Us (1.8%)',  value: result.edcOnUsCreditFee },
@@ -165,9 +278,112 @@ function CalculatorContent() {
           <NumberInput
             label="Total Volume Transaksi / Bulan"
             value={totalVolume}
-            onChange={setTotalVolume}
-            hint="Tanyakan langsung ke owner atau estimasi dari ramai/tidaknya merchant"
+            onChange={v => { setTotalVolume(v); setShowVolumeHelper(false) }}
+            hint="Tanyakan langsung ke owner, atau gunakan estimator di bawah"
           />
+
+          {/* Volume estimator helper */}
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => setShowVolumeHelper(!showVolumeHelper)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-mandiri-600 hover:text-mandiri-800 transition-colors"
+            >
+              <ChevronDown size={14} className={cn('transition-transform duration-200', showVolumeHelper && 'rotate-180')} />
+              Bantu hitung dari data pelanggan
+            </button>
+
+            {showVolumeHelper && (
+              <div className="mt-3 bg-blue-50 rounded-xl p-4 space-y-4">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Isi asumsi di bawah → volume otomatis terhitung
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                      <Users size={11} className="inline mr-1" />
+                      Rata-rata Spent / Orang
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">Rp</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={avgSpend}
+                        onChange={e => setAvgSpend(e.target.value.replace(/\D/g, ''))}
+                        placeholder="50000"
+                        className="input pl-9 py-2 text-sm"
+                      />
+                    </div>
+                    {avgSpend && (
+                      <p className="text-xs text-mandiri-600 font-semibold mt-1">{formatRupiah(parseFloat(avgSpend))}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                      Pelanggan / Hari
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={customersPerDay}
+                      onChange={e => setCustomersPerDay(e.target.value.replace(/\D/g, ''))}
+                      placeholder="50"
+                      className="input py-2 text-sm"
+                    />
+                    {customersPerDay && (
+                      <p className="text-xs text-slate-400 mt-1">{customersPerDay} orang/hari</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5">Hari Operasional / Bulan</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {['25', '26', '28', '30'].map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setOperatingDays(d)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                          operatingDays === d
+                            ? 'bg-mandiri-700 text-white border-mandiri-700'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-mandiri-300'
+                        )}
+                      >
+                        {d} hari
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {parseFloat(avgSpend) > 0 && parseFloat(customersPerDay) > 0 && (
+                  <div className="bg-white rounded-xl p-4 border border-blue-200">
+                    <div className="grid grid-cols-3 gap-1 text-center text-xs mb-3">
+                      <div>
+                        <p className="text-slate-400 mb-1">Spent/orang</p>
+                        <p className="font-bold text-slate-700">{formatRupiah(parseFloat(avgSpend))}</p>
+                      </div>
+                      <div className="flex items-center justify-center text-slate-300 font-bold">×</div>
+                      <div>
+                        <p className="text-slate-400 mb-1">Pelanggan/bln</p>
+                        <p className="font-bold text-slate-700">{parseFloat(customersPerDay) * parseFloat(operatingDays)} org</p>
+                      </div>
+                    </div>
+                    <div className="text-center border-t border-slate-100 pt-3">
+                      <p className="text-xs text-slate-400 mb-1">= Volume Transaksi / Bulan</p>
+                      <p className="text-xl font-extrabold text-mandiri-700">
+                        {formatRupiah(parseFloat(avgSpend) * parseFloat(customersPerDay) * parseFloat(operatingDays))}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Step 2: Split EDC vs QRIS */}
@@ -315,6 +531,15 @@ function CalculatorContent() {
                 <span className="text-xl font-extrabold text-mandiri-700">{formatRupiah(result.totalFee)}</span>
               </div>
             </div>
+
+            {/* Export button */}
+            <button
+              onClick={handleExportExcel}
+              className="w-full flex items-center justify-center gap-2.5 bg-green-600 hover:bg-green-700 active:scale-98 text-white font-semibold py-3.5 rounded-2xl transition-all shadow-sm shadow-green-900/20"
+            >
+              <FileSpreadsheet size={18} />
+              Download Excel untuk ATF
+            </button>
 
             {/* Projections */}
             <div className="grid grid-cols-2 gap-3">
