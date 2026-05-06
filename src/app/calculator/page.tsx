@@ -8,7 +8,7 @@ import { calculateFee, formatRupiah } from '@/lib/utils'
 import { Calculator, TrendingUp, CreditCard, Smartphone, Info, Download, ChevronDown, Users, FileSpreadsheet } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { cn } from '@/lib/utils'
-import * as XLSX from 'xlsx'
+import XLSXStyle from 'xlsx-js-style'
 
 function NumberInput({
   label, value, onChange, sublabel, hint
@@ -142,94 +142,399 @@ function CalculatorContent() {
       rateDebitOnUs, rateDebitOffUs, rateKreditOnUs, rateKreditOffUs, rateQris])
 
   function handleExportExcel() {
-    const fmt = (n: number) =>
-      new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
-    const pct = (n: number) => `${n}%`
-    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    // ── Palette ─────────────────────────────────────────────────────────────
+    const C = {
+      NAVY:      '003B79',
+      NAVY_DARK: '002550',
+      BLUE:      '1A5BA8',
+      BLUE_PALE: 'DBE8F6',
+      GOLD:      'F5A623',
+      GOLD_PALE: 'FEF3DD',
+      WHITE:     'FFFFFF',
+      OFF_WHITE: 'F7FAFD',
+      ALT_ROW:   'EEF4FB',
+      BORDER:    'C0D0E4',
+      TEXT:      '1A2E3F',
+      SUBTEXT:   '4A6A88',
+      TOTAL_BG:  '002550',
+      SECTION_BG:'0A3060',
+    }
 
+    const thin = (color = C.BORDER) => ({
+      top:    { style: 'thin', color: { rgb: color } },
+      bottom: { style: 'thin', color: { rgb: color } },
+      left:   { style: 'thin', color: { rgb: color } },
+      right:  { style: 'thin', color: { rgb: color } },
+    })
+    const medium = (color = C.NAVY) => ({
+      top:    { style: 'medium', color: { rgb: color } },
+      bottom: { style: 'medium', color: { rgb: color } },
+      left:   { style: 'medium', color: { rgb: color } },
+      right:  { style: 'medium', color: { rgb: color } },
+    })
+
+    // ── Style builders ───────────────────────────────────────────────────────
+    const S = {
+      title: {
+        fill: { fgColor: { rgb: C.NAVY } },
+        font: { bold: true, color: { rgb: C.WHITE }, sz: 15, name: 'Calibri' },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thin(C.NAVY),
+      },
+      subtitle: {
+        fill: { fgColor: { rgb: C.BLUE } },
+        font: { bold: false, color: { rgb: C.WHITE }, sz: 10, name: 'Calibri', italic: true },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thin(C.BLUE),
+      },
+      infoLabel: {
+        fill: { fgColor: { rgb: C.BLUE_PALE } },
+        font: { bold: true, color: { rgb: C.NAVY }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: thin(),
+      },
+      infoValue: {
+        fill: { fgColor: { rgb: C.WHITE } },
+        font: { color: { rgb: C.TEXT }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: thin(),
+      },
+      sectionHeader: {
+        fill: { fgColor: { rgb: C.SECTION_BG } },
+        font: { bold: true, color: { rgb: C.WHITE }, sz: 10, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: { ...thin(C.SECTION_BG), left: { style: 'medium', color: { rgb: C.GOLD } } },
+      },
+      colHeader: {
+        fill: { fgColor: { rgb: C.BLUE_PALE } },
+        font: { bold: true, color: { rgb: C.NAVY }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: thin(),
+      },
+      colHeaderRight: {
+        fill: { fgColor: { rgb: C.BLUE_PALE } },
+        font: { bold: true, color: { rgb: C.NAVY }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'right', vertical: 'center', wrapText: true },
+        border: thin(),
+      },
+      data: (alt = false) => ({
+        fill: { fgColor: { rgb: alt ? C.ALT_ROW : C.WHITE } },
+        font: { color: { rgb: C.TEXT }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: thin(),
+      }),
+      dataNum: (alt = false) => ({
+        fill: { fgColor: { rgb: alt ? C.ALT_ROW : C.WHITE } },
+        font: { color: { rgb: C.TEXT }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border: thin(),
+        numFmt: '#,##0',
+      }),
+      dataPct: (alt = false) => ({
+        fill: { fgColor: { rgb: alt ? C.ALT_ROW : C.WHITE } },
+        font: { bold: true, color: { rgb: C.BLUE }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thin(),
+      }),
+      subHeader: (alt = false) => ({
+        fill: { fgColor: { rgb: alt ? C.GOLD_PALE : C.OFF_WHITE } },
+        font: { bold: true, color: { rgb: C.NAVY }, sz: 9, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: { ...thin(), left: { style: 'thin', color: { rgb: C.GOLD } } },
+      }),
+      total: {
+        fill: { fgColor: { rgb: C.TOTAL_BG } },
+        font: { bold: true, color: { rgb: C.WHITE }, sz: 10, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: medium(C.TOTAL_BG),
+      },
+      totalNum: {
+        fill: { fgColor: { rgb: C.TOTAL_BG } },
+        font: { bold: true, color: { rgb: C.GOLD }, sz: 11, name: 'Calibri' },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border: medium(C.TOTAL_BG),
+        numFmt: '#,##0',
+      },
+      totalBlank: {
+        fill: { fgColor: { rgb: C.TOTAL_BG } },
+        font: { color: { rgb: C.TOTAL_BG }, sz: 9 },
+        border: medium(C.TOTAL_BG),
+      },
+      highlight: {
+        fill: { fgColor: { rgb: C.GOLD_PALE } },
+        font: { bold: true, color: { rgb: C.NAVY_DARK }, sz: 10, name: 'Calibri' },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+        border: { ...thin(C.GOLD), left: { style: 'medium', color: { rgb: C.GOLD } } },
+      },
+      highlightNum: {
+        fill: { fgColor: { rgb: C.GOLD_PALE } },
+        font: { bold: true, color: { rgb: C.NAVY_DARK }, sz: 10, name: 'Calibri' },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border: { ...thin(C.GOLD), right: { style: 'medium', color: { rgb: C.GOLD } } },
+        numFmt: '#,##0',
+      },
+      footer: {
+        fill: { fgColor: { rgb: C.NAVY } },
+        font: { italic: true, color: { rgb: C.WHITE }, sz: 8, name: 'Calibri' },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thin(C.NAVY),
+      },
+      empty: (bg = C.WHITE) => ({
+        fill: { fgColor: { rgb: bg } },
+        border: thin(bg),
+      }),
+    }
+
+    // ── Data prep ────────────────────────────────────────────────────────────
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     const edcVol    = vol * (edcPct / 100)
     const qrisVol   = vol * ((100 - edcPct) / 100)
     const debitVol  = edcVol * (debitPct / 100)
     const kreditVol = edcVol * ((100 - debitPct) / 100)
 
-    const aoa: (string | number | null)[][] = [
-      ['SIMULASI FEE-BASED INCOME — BANK MANDIRI'],
-      [],
-      ['Disiapkan oleh', session?.user?.name ?? '-', '', 'Tanggal', today],
-      merchantName ? ['Merchant', merchantName] : [],
-      [],
-      ['A. ASUMSI VOLUME TRANSAKSI'],
-      ['Keterangan', 'Nilai', 'Satuan'],
-    ]
+    const NCOLS = 5 // A-E
+    type RawRow = (string | number | null)[]
 
-    if (showVolumeHelper && parseFloat(avgSpend) > 0 && parseFloat(customersPerDay) > 0) {
-      aoa.push(
-        ['Rata-rata Spent per Pelanggan', parseFloat(avgSpend), 'Rp'],
-        ['Jumlah Pelanggan per Hari', parseFloat(customersPerDay), 'orang'],
-        ['Hari Operasional per Bulan', parseFloat(operatingDays) || 26, 'hari'],
-        ['Total Volume Transaksi / Bulan', vol, 'Rp'],
-      )
-    } else {
-      aoa.push(['Total Volume Transaksi / Bulan', vol, 'Rp'])
+    // We'll collect rows + per-cell styles
+    const rows: RawRow[] = []
+    const styles: Record<string, any> = {}
+    const merges: any[] = []
+    const rowH: { hpt: number }[] = []
+
+    function R() { return rows.length }
+
+    function addRow(cells: RawRow, cellStyles: any[], hpt = 16) {
+      rows.push(cells)
+      rowH.push({ hpt })
+      const r = rows.length - 1
+      cells.forEach((_, c) => {
+        if (cellStyles[c]) {
+          styles[XLSXStyle.utils.encode_cell({ r, c })] = cellStyles[c]
+        }
+      })
     }
 
-    aoa.push(
-      [],
-      ['B. SPLIT CHANNEL PEMBAYARAN'],
-      ['Channel', 'Porsi (%)', 'Volume (Rp)'],
-      ['EDC',  pct(edcPct),           edcVol],
-      ['QRIS', pct(100 - edcPct),     qrisVol],
-      [],
-      ['C. DETAIL BREAKDOWN EDC'],
-      ['Kategori', 'Porsi (%)', 'Volume (Rp)'],
-      ['Kartu Debit',   pct(debitPct),         debitVol],
-      ['  On-Us Debit (Mandiri)',  pct(debitOnUsPct),     debitVol * (debitOnUsPct / 100)],
-      ['  Off-Us Debit',          pct(100 - debitOnUsPct), debitVol * ((100 - debitOnUsPct) / 100)],
-      ['Kartu Kredit',  pct(100 - debitPct),   kreditVol],
-      ['  On-Us Kredit (Mandiri)', pct(kreditOnUsPct),    kreditVol * (kreditOnUsPct / 100)],
-      ['  Off-Us Kredit',         pct(100 - kreditOnUsPct), kreditVol * ((100 - kreditOnUsPct) / 100)],
-      [],
-      ['D. RINCIAN FEE PER KATEGORI'],
-      ['Kategori', 'Tarif MDR', 'Volume Transaksi (Rp)', 'Fee (Rp)'],
-      ['EDC Debit On-Us',   `${rateDebitOnUs}%`,   debitVol * (debitOnUsPct / 100),                   result.edcOnUsDebitFee],
-      ['EDC Debit Off-Us',  `${rateDebitOffUs}%`,  debitVol * ((100 - debitOnUsPct) / 100),            result.edcOffUsDebitFee],
-      ['EDC Kredit On-Us',  `${rateKreditOnUs}%`,  kreditVol * (kreditOnUsPct / 100),                  result.edcOnUsCreditFee],
-      ['EDC Kredit Off-Us', `${rateKreditOffUs}%`, kreditVol * ((100 - kreditOnUsPct) / 100),          result.edcOffUsCreditFee],
-      ['QRIS',              `${rateQris}%`,         qrisVol,                                            result.qrisFee],
-      ['TOTAL FEE / BULAN', '', '', result.totalFee],
-      [],
-      ['E. PROYEKSI PENDAPATAN FEE'],
-      ['Periode', 'Proyeksi Fee (Rp)'],
-      ['1 Bulan',  result.totalFee],
-      ['3 Bulan',  result.totalFee * 3],
-      ['6 Bulan',  result.totalFee * 6],
-      ['1 Tahun',  result.annualProjection],
-      [],
-      ['F. CATATAN UNTUK ATF'],
-      [`Merchant ini berpotensi menghasilkan fee sebesar ${fmt(result.totalFee)}/bulan atau ${fmt(result.annualProjection)}/tahun.`],
-      [result.annualProjection > 50000000
-        ? 'Rekomendasikan ke Branch Manager untuk program Merchant Premium / Sponsorship.'
-        : 'Dapat dipertimbangkan untuk program co-branding atau diskon biaya transaksi.'],
-      [],
-      ['— Dokumen ini digenerate otomatis dari Portal Akuisisi Merchant Bank Mandiri —'],
+    function mergeRow(row: number, c1 = 0, c2 = NCOLS - 1) {
+      merges.push({ s: { r: row, c: c1 }, e: { r: row, c: c2 } })
+    }
+
+    function blankRow(bg = C.WHITE, hpt = 6) {
+      const cells: RawRow = Array(NCOLS).fill(null)
+      const st = cells.map(() => S.empty(bg))
+      addRow(cells, st, hpt)
+    }
+
+    function sectionRow(label: string) {
+      const cells: RawRow = [label, null, null, null, null]
+      const st = cells.map(() => S.sectionHeader)
+      addRow(cells, st, 18)
+      mergeRow(R() - 1)
+    }
+
+    // ── Build rows ───────────────────────────────────────────────────────────
+
+    // Row 0: Title
+    addRow(['SIMULASI FEE-BASED INCOME  —  BANK MANDIRI', null, null, null, null],
+           Array(NCOLS).fill(S.title), 30)
+    mergeRow(0)
+
+    // Row 1: Subtitle
+    addRow(['PT Bank Mandiri (Persero) Tbk  |  Laporan Internal ATF', null, null, null, null],
+           Array(NCOLS).fill(S.subtitle), 16)
+    mergeRow(1)
+
+    // Row 2: blank
+    blankRow(C.NAVY, 4)
+
+    // Row 3: Info row
+    addRow(
+      ['Disiapkan oleh', session?.user?.name ?? '-', null, 'Tanggal', today],
+      [S.infoLabel, S.infoValue, S.empty(), S.infoLabel, S.infoValue],
+      16
     )
 
-    const ws = XLSX.utils.aoa_to_sheet(aoa)
+    if (merchantName) {
+      addRow(['Merchant / Nasabah', merchantName, null, null, null],
+             [S.infoLabel, S.infoValue, S.empty(), S.empty(), S.empty()], 16)
+      merges.push({ s: { r: R() - 1, c: 1 }, e: { r: R() - 1, c: 4 } })
+    }
 
-    // Column widths
-    ws['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 22 }]
+    blankRow(C.WHITE, 8)
 
-    // Merge title cell
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }]
+    // ── Section A ────────────────────────────────────────────────────────────
+    sectionRow('A.   ASUMSI VOLUME TRANSAKSI')
 
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Simulasi Fee-Based Income')
-    const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+    addRow(['Keterangan', 'Nilai', 'Satuan', null, null],
+           [S.colHeader, S.colHeaderRight, S.colHeader, S.empty(C.BLUE_PALE), S.empty(C.BLUE_PALE)], 15)
+
+    const useHelper = showVolumeHelper && parseFloat(avgSpend) > 0 && parseFloat(customersPerDay) > 0
+    const dataRows_A: [string, number, string][] = useHelper
+      ? [
+          ['Rata-rata Spent per Pelanggan', parseFloat(avgSpend), 'Rp / orang'],
+          ['Jumlah Pelanggan per Hari', parseFloat(customersPerDay), 'orang / hari'],
+          ['Hari Operasional per Bulan', parseFloat(operatingDays) || 26, 'hari'],
+          ['Total Volume Transaksi / Bulan', vol, 'Rp / bulan'],
+        ]
+      : [['Total Volume Transaksi / Bulan', vol, 'Rp / bulan']]
+
+    dataRows_A.forEach(([label, value, unit], i) => {
+      const alt = i % 2 === 1
+      addRow([label, value, unit, null, null],
+             [S.data(alt), S.dataNum(alt), S.data(alt), S.empty(alt ? C.ALT_ROW : C.WHITE), S.empty(alt ? C.ALT_ROW : C.WHITE)], 15)
+    })
+
+    blankRow(C.WHITE, 6)
+
+    // ── Section B ────────────────────────────────────────────────────────────
+    sectionRow('B.   SPLIT CHANNEL PEMBAYARAN')
+
+    addRow(['Channel', 'Porsi (%)', 'Volume (Rp)', null, null],
+           [S.colHeader, S.colHeader, S.colHeaderRight, S.empty(C.BLUE_PALE), S.empty(C.BLUE_PALE)], 15)
+
+    ;[['Kartu (EDC)', edcPct, edcVol], ['QRIS', 100 - edcPct, qrisVol]].forEach(([label, pct, vl], i) => {
+      const alt = i % 2 === 1
+      addRow([label as string, `${pct}%`, vl as number, null, null],
+             [S.data(alt), S.dataPct(alt), S.dataNum(alt), S.empty(alt ? C.ALT_ROW : C.WHITE), S.empty(alt ? C.ALT_ROW : C.WHITE)], 15)
+    })
+
+    blankRow(C.WHITE, 6)
+
+    // ── Section C ────────────────────────────────────────────────────────────
+    sectionRow('C.   DETAIL BREAKDOWN JENIS KARTU')
+
+    addRow(['Kategori', 'Porsi (%)', 'Volume (Rp)', null, null],
+           [S.colHeader, S.colHeader, S.colHeaderRight, S.empty(C.BLUE_PALE), S.empty(C.BLUE_PALE)], 15)
+
+    addRow(['Kartu Debit', `${debitPct}%`, debitVol, null, null],
+           [S.subHeader(false), S.dataPct(false), S.dataNum(false), S.empty(), S.empty()], 15)
+
+    addRow(['    On-Us Debit  (Kartu Mandiri)', `${debitOnUsPct}%`, debitVol * (debitOnUsPct / 100), null, null],
+           [S.data(true), S.dataPct(true), S.dataNum(true), S.empty(C.ALT_ROW), S.empty(C.ALT_ROW)], 14)
+
+    addRow(['    Off-Us Debit  (Bank Lain)', `${100 - debitOnUsPct}%`, debitVol * ((100 - debitOnUsPct) / 100), null, null],
+           [S.data(false), S.dataPct(false), S.dataNum(false), S.empty(), S.empty()], 14)
+
+    addRow(['Kartu Kredit', `${100 - debitPct}%`, kreditVol, null, null],
+           [S.subHeader(true), S.dataPct(true), S.dataNum(true), S.empty(C.ALT_ROW), S.empty(C.ALT_ROW)], 15)
+
+    addRow(['    On-Us Kredit  (Kartu Mandiri)', `${kreditOnUsPct}%`, kreditVol * (kreditOnUsPct / 100), null, null],
+           [S.data(false), S.dataPct(false), S.dataNum(false), S.empty(), S.empty()], 14)
+
+    addRow(['    Off-Us Kredit  (Bank Lain)', `${100 - kreditOnUsPct}%`, kreditVol * ((100 - kreditOnUsPct) / 100), null, null],
+           [S.data(true), S.dataPct(true), S.dataNum(true), S.empty(C.ALT_ROW), S.empty(C.ALT_ROW)], 14)
+
+    blankRow(C.WHITE, 6)
+
+    // ── Section D ────────────────────────────────────────────────────────────
+    sectionRow('D.   RINCIAN FEE PER KATEGORI')
+
+    addRow(['Kategori', 'Tarif MDR', 'Volume Transaksi (Rp)', 'Fee Mandiri (Rp)', null],
+           [S.colHeader, S.colHeader, S.colHeaderRight, S.colHeaderRight, S.empty(C.BLUE_PALE)], 15)
+
+    const feeRows: [string, string, number, number][] = [
+      ['EDC Debit On-Us',   `${rateDebitOnUs}%`,   debitVol * (debitOnUsPct / 100),              result.edcOnUsDebitFee],
+      ['EDC Debit Off-Us',  `${rateDebitOffUs}%`,  debitVol * ((100 - debitOnUsPct) / 100),      result.edcOffUsDebitFee],
+      ['EDC Kredit On-Us',  `${rateKreditOnUs}%`,  kreditVol * (kreditOnUsPct / 100),            result.edcOnUsCreditFee],
+      ['EDC Kredit Off-Us', `${rateKreditOffUs}%`, kreditVol * ((100 - kreditOnUsPct) / 100),    result.edcOffUsCreditFee],
+      ['QRIS',              `${rateQris}%`,         qrisVol,                                      result.qrisFee],
+    ]
+
+    feeRows.forEach(([label, rate, volume, fee], i) => {
+      const alt = i % 2 === 1
+      addRow([label, rate, volume, fee, null],
+             [S.data(alt), S.dataPct(alt), S.dataNum(alt), S.dataNum(alt), S.empty(alt ? C.ALT_ROW : C.WHITE)], 15)
+    })
+
+    // Total row
+    addRow(['TOTAL FEE / BULAN', null, null, result.totalFee, null],
+           [S.total, S.totalBlank, S.totalBlank, S.totalNum, S.totalBlank], 20)
+    merges.push({ s: { r: R() - 1, c: 0 }, e: { r: R() - 1, c: 2 } })
+
+    blankRow(C.WHITE, 6)
+
+    // ── Section E ────────────────────────────────────────────────────────────
+    sectionRow('E.   PROYEKSI PENDAPATAN FEE')
+
+    addRow(['Periode', 'Proyeksi Fee Kumulatif (Rp)', null, null, null],
+           [S.colHeader, S.colHeaderRight, S.empty(C.BLUE_PALE), S.empty(C.BLUE_PALE), S.empty(C.BLUE_PALE)], 15)
+    merges.push({ s: { r: R() - 1, c: 1 }, e: { r: R() - 1, c: 4 } })
+
+    const projRows: [string, number, boolean][] = [
+      ['1 Bulan',  result.totalFee,             false],
+      ['3 Bulan',  result.totalFee * 3,         true],
+      ['6 Bulan',  result.totalFee * 6,         false],
+      ['1 Tahun',  result.annualProjection,      true],
+    ]
+
+    projRows.forEach(([label, value, isHighlight]) => {
+      if (isHighlight) {
+        addRow([label, value, null, null, null],
+               [S.highlight, S.highlightNum, S.empty(C.GOLD_PALE), S.empty(C.GOLD_PALE), S.empty(C.GOLD_PALE)], 17)
+        merges.push({ s: { r: R() - 1, c: 1 }, e: { r: R() - 1, c: 4 } })
+      } else {
+        addRow([label, value, null, null, null],
+               [S.data(false), S.dataNum(false), S.empty(), S.empty(), S.empty()], 15)
+        merges.push({ s: { r: R() - 1, c: 1 }, e: { r: R() - 1, c: 4 } })
+      }
+    })
+
+    blankRow(C.WHITE, 6)
+
+    // ── Section F ────────────────────────────────────────────────────────────
+    sectionRow('F.   CATATAN UNTUK ATF')
+
+    const fmt = (n: number) =>
+      new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
+
+    const note1 = `Merchant ini berpotensi menghasilkan fee sebesar ${fmt(result.totalFee)}/bulan atau ${fmt(result.annualProjection)}/tahun untuk Bank Mandiri.`
+    const note2 = result.annualProjection > 50_000_000
+      ? 'Rekomendasikan ke Branch Manager untuk program Merchant Premium / Sponsorship.'
+      : 'Dapat dipertimbangkan untuk program co-branding atau diskon biaya transaksi.'
+
+    const noteStyle = {
+      fill: { fgColor: { rgb: C.GOLD_PALE } },
+      font: { color: { rgb: C.TEXT }, sz: 9, name: 'Calibri' },
+      alignment: { horizontal: 'left', vertical: 'center', wrapText: true, indent: 1 },
+      border: thin(C.GOLD),
+    }
+
+    addRow([note1, null, null, null, null], Array(NCOLS).fill(noteStyle), 28)
+    mergeRow(R() - 1)
+
+    addRow([note2, null, null, null, null], Array(NCOLS).fill({
+      ...noteStyle,
+      font: { ...noteStyle.font, italic: true, color: { rgb: C.BLUE } },
+    }), 22)
+    mergeRow(R() - 1)
+
+    blankRow(C.WHITE, 8)
+
+    // Footer
+    addRow(['— Dokumen ini digenerate otomatis dari Portal Akuisisi Merchant Bank Mandiri —', null, null, null, null],
+           Array(NCOLS).fill(S.footer), 14)
+    mergeRow(R() - 1)
+
+    // ── Assemble worksheet ───────────────────────────────────────────────────
+    const ws = XLSXStyle.utils.aoa_to_sheet(rows)
+    ws['!cols'] = [{ wch: 38 }, { wch: 16 }, { wch: 24 }, { wch: 22 }, { wch: 4 }]
+    ws['!rows'] = rowH
+    ws['!merges'] = merges
+
+    // Apply styles
+    Object.entries(styles).forEach(([addr, style]) => {
+      if (!ws[addr]) ws[addr] = { v: null, t: 'z' }
+      ws[addr].s = style
+      if (style.numFmt) ws[addr].z = style.numFmt
+    })
+
+    const wb = XLSXStyle.utils.book_new()
+    XLSXStyle.utils.book_append_sheet(wb, ws, 'Simulasi Fee-Based Income')
+    const buf = XLSXStyle.write(wb, { type: 'array', bookType: 'xlsx' })
     const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `simulasi-fee-${new Date().toISOString().slice(0, 10)}.xlsx`
+    a.download = `simulasi-fee-mandiri-${new Date().toISOString().slice(0, 10)}.xlsx`
     a.click()
     URL.revokeObjectURL(url)
   }
