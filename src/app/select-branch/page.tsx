@@ -64,17 +64,17 @@ export default function SelectBranchPage() {
 
   const greeting = () => {
     const h = new Date().getHours()
-    if (h < 11) return 'Selamat Pagi'
-    if (h < 15) return 'Selamat Siang'
-    if (h < 18) return 'Selamat Sore'
-    return 'Selamat Malam'
+    if (h < 11) return 'Selamat pagi,'
+    if (h < 15) return 'Selamat siang,'
+    if (h < 18) return 'Selamat sore,'
+    return 'Selamat malam,'
   }
 
   const isAdmin = session?.user?.role === 'ADMIN'
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-sans">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-slate-200 border-t-[#003B79] rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm font-medium text-slate-500">Memuat data...</p>
@@ -84,153 +84,166 @@ export default function SelectBranchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] font-sans pb-10">
+    <div className="min-h-screen bg-[#F4F7FB] font-sans pb-10">
 
-      {/* ── HEADER ── */}
-      <div className="bg-[#003B79] relative overflow-hidden">
-        {/* decorative shapes */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/4 translate-x-1/4 pointer-events-none" />
-        <div className="absolute bottom-0 right-10 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 pointer-events-none" />
+      {/* ── TOP HEADER (Dashboard Style) ── */}
+      <div className="px-4 pt-6 max-w-3xl mx-auto">
+        <div className="bg-gradient-to-r from-[#003B79] to-[#2B79C4] rounded-2xl p-5 relative overflow-hidden shadow-lg mb-6 flex justify-between items-start">
+          {/* Background Graphics */}
+          <div className="absolute right-0 bottom-0 opacity-20 pointer-events-none flex items-end">
+             {/* Simple Bar Chart Silhouette */}
+             <div className="w-4 h-12 bg-white mx-1 rounded-t-sm" />
+             <div className="w-4 h-20 bg-white mx-1 rounded-t-sm" />
+             <div className="w-4 h-16 bg-white mx-1 rounded-t-sm" />
+             <div className="w-4 h-24 bg-white mx-1 rounded-t-sm" />
+             <div className="w-4 h-32 bg-white mx-1 rounded-t-sm" />
+             <div className="w-4 h-20 bg-white mx-1 rounded-t-sm" />
+             <div className="w-4 h-28 bg-white mx-1 rounded-t-sm" />
+          </div>
+          {/* Mandiri Golden Wave Ribbon Silhouette */}
+          <div className="absolute right-10 bottom-0 pointer-events-none opacity-80">
+            <svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 40C10 -10 30 -10 60 40C70 20 90 20 120 40" stroke="#F5A623" strokeWidth="3" fill="none"/>
+              <path d="M15 40C25 0 45 0 75 40" stroke="#F5A623" strokeWidth="2" fill="none" opacity="0.6"/>
+              <path d="M60 40L60 10L65 40Z" fill="#F5A623"/>
+            </svg>
+          </div>
 
-        <div className="relative max-w-2xl mx-auto px-5 pt-10 pb-6">
-          {/* Top row */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md border border-white/10">
-                <Store size={22} className="text-[#003B79]" />
-              </div>
-              <div>
-                <p className="text-blue-100/90 text-xs font-medium mb-0.5">{greeting()},</p>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-white font-bold text-lg leading-none">{session?.user?.name || 'Demo Sales'}</h2>
-                </div>
-                <div className="mt-1.5">
-                  <span className="bg-[#002A57] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-white/10 shadow-sm">
-                    {isAdmin ? '🛡️ Administrator' : '👤 Sales Executive'}
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="relative z-10">
+            <p className="text-blue-100 text-[13px] font-medium tracking-wide mb-1">{greeting()}</p>
+            <h1 className="text-white text-[22px] font-extrabold tracking-tight leading-tight mb-2">
+              {session?.user?.name || 'Demo Sales'}
+            </h1>
+            <p className="text-blue-200 text-[11px] font-bold tracking-widest uppercase">
+              {isAdmin ? 'Administrator' : 'Sales Executive'}
+            </p>
+          </div>
+          
+          <div className="relative z-10 flex flex-col items-end">
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-sm"
+              className="text-white/80 hover:text-white p-1 mb-2 transition-colors"
               title="Keluar"
             >
-              <LogOut size={18} className="text-white translate-x-0.5" />
+              <LogOut size={18} />
             </button>
-          </div>
-
-          {/* Date */}
-          <div className="flex items-center gap-2 mb-6 text-blue-100/90 bg-white/10 inline-flex px-3 py-1.5 rounded-lg border border-white/10 backdrop-blur-sm">
-            <Calendar size={14} className="text-white" />
-            <span className="text-xs font-semibold tracking-wide">
-              {format(new Date(), "EEEE, d MMMM yyyy", { locale: idLocale })}
-            </span>
-          </div>
-
-          {/* Stats chips */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            {[
-              { icon: Building2, label: 'Cabang',   value: branches.length },
-              { icon: Store,     label: 'Merchant',  value: totalMerchants   },
-              { icon: MapPin,    label: 'Kota',       value: totalCities      },
-            ].map(s => (
-              <div key={s.label} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/20 shadow-sm">
-                <s.icon size={18} className="text-blue-200 mx-auto mb-2 opacity-90" />
-                <p className="text-white font-bold text-2xl leading-none mb-1.5">{s.value}</p>
-                <p className="text-blue-100 text-xs font-medium">{s.label}</p>
+            <div className="flex flex-col items-end">
+              <Calendar size={14} className="text-blue-200 mb-1" />
+              <div className="text-right">
+                <p className="text-white text-[12px] font-bold">{format(new Date(), "EEEE", { locale: idLocale })}</p>
+                <p className="text-blue-200 text-[10px] whitespace-nowrap">{format(new Date(), "d MMM yyyy", { locale: idLocale })}</p>
               </div>
-            ))}
-          </div>
-
-          {/* Merchant status breakdown */}
-          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2">
-            {[
-              { label: 'Tersedia',   value: merchantStats.available,  dot: 'bg-slate-300' },
-              { label: 'Akuisisi',   value: merchantStats.acquired,   dot: 'bg-[#0064B4]' },
-              { label: 'Dikunjungi', value: merchantStats.locked,     dot: 'bg-[#F5A623]' },
-              { label: 'Tertarik',   value: merchantStats.interested, dot: 'bg-blue-300' },
-              { label: 'Viral',      value: merchantStats.viral,      dot: 'bg-blue-100' },
-            ].map(s => (
-              <div key={s.label} className="flex items-center gap-2 bg-[#002A57]/60 backdrop-blur-md rounded-full px-3.5 py-1.5 shrink-0 border border-white/10 shadow-sm">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-                <span className="text-white font-bold text-xs">{s.value}</span>
-                <span className="text-blue-100/90 text-[11px] font-medium">{s.label}</span>
-              </div>
-            ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto px-5 mt-6">
-
-        {/* ── QUICK ACTIONS (Professional Styling) ── */}
-        <div className="grid grid-cols-2 gap-3.5 mb-4">
-          {/* Calculator Fee card */}
+        {/* ── MENU CARDS (Similar to screenshot) ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Kalkulator Fee */}
           <button
             onClick={() => router.push('/calculator')}
-            className="flex flex-col bg-white rounded-2xl p-4 text-left shadow-sm hover:shadow-md active:scale-[0.98] transition-all border border-slate-200"
+            className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all active:scale-[0.98] border border-slate-100"
           >
-            <div className="w-10 h-10 bg-[#F5F7FA] rounded-xl flex items-center justify-center mb-3">
-              <Calculator size={20} className="text-[#003B79]" />
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+              <Calculator size={20} className="text-[#0064B4]" />
             </div>
-            <p className="text-[#002A57] font-bold text-sm leading-tight mb-1">Kalkulator Fee</p>
-            <p className="text-slate-500 text-xs font-medium mb-3">Simulasi MDR & QRIS</p>
-            <div className="mt-auto flex items-center gap-1 text-[#0064B4] text-xs font-bold">
-              Buka <ChevronRight size={14} />
+            <div className="flex-1 text-left">
+              <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Kalkulator Fee</p>
+              <p className="text-slate-400 text-[12px] font-medium">Simulasi MDR & QRIS</p>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
+              <ChevronRight size={14} />
             </div>
           </button>
 
-          {/* Negotiation Calculator card */}
+          {/* Simulasi Hemat */}
           <button
             onClick={() => router.push('/negotiation')}
-            className="flex flex-col bg-white rounded-2xl p-4 text-left shadow-sm hover:shadow-md active:scale-[0.98] transition-all border border-slate-200"
+            className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all active:scale-[0.98] border border-slate-100"
           >
-            <div className="w-10 h-10 bg-[#F5F7FA] rounded-xl flex items-center justify-center mb-3">
-              <PiggyBank size={20} className="text-[#003B79]" />
+            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+              <PiggyBank size={20} className="text-[#F5A623]" />
             </div>
-            <p className="text-[#002A57] font-bold text-sm leading-tight mb-1">Simulasi Hemat</p>
-            <p className="text-slate-500 text-xs font-medium mb-3">Negosiasi vs bank lain</p>
-            <div className="mt-auto flex items-center gap-1 text-[#0064B4] text-xs font-bold">
-              Hitung <ChevronRight size={14} />
+            <div className="flex-1 text-left">
+              <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Simulasi Hemat</p>
+              <p className="text-slate-400 text-[12px] font-medium">Negosiasi vs bank lain</p>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
+              <ChevronRight size={14} />
+            </div>
+          </button>
+
+          {/* Leaderboard */}
+          <button
+            onClick={() => router.push('/leaderboard')}
+            className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all active:scale-[0.98] border border-slate-100 md:col-span-2"
+          >
+            <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+              <Trophy size={20} className="text-indigo-500" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Leaderboard</p>
+              <p className="text-slate-400 text-[12px] font-medium">Monitoring & analisis performa sales</p>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
+              <ChevronRight size={14} />
             </div>
           </button>
         </div>
 
-        {/* Leaderboard banner */}
-        <button
-          onClick={() => router.push('/leaderboard')}
-          className="w-full bg-[#003B79] rounded-2xl p-4 mb-6 flex items-center gap-4 text-left active:scale-[0.98] transition-all shadow-md relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-          <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-white/10 backdrop-blur-sm z-10 shadow-inner">
-            <Trophy size={20} className="text-[#F5A623]" />
-          </div>
-          <div className="flex-1 z-10">
-            <p className="text-white font-bold text-sm mb-0.5">Papan Peringkat Sales</p>
-            <p className="text-blue-100 text-xs font-medium">Lihat ranking poin terbaik bulan ini</p>
-          </div>
-          <ChevronRight size={20} className="text-white/70 shrink-0 z-10" />
-        </button>
-
-        {/* ── INFO BANNER (admin only) ── */}
+        {/* ── DIVIDER & ADMIN PANEL ── */}
         {isAdmin && (
-          <button
-            onClick={() => router.push('/admin')}
-            className="w-full bg-white rounded-2xl p-4 mb-6 flex items-center gap-4 text-left active:scale-[0.98] transition-all shadow-sm border border-slate-200"
-          >
-            <div className="w-11 h-11 bg-[#F5F7FA] rounded-xl flex items-center justify-center shrink-0">
-              <Shield size={20} className="text-[#003B79]" />
+          <>
+            <div className="flex items-center gap-3 mb-4 opacity-70">
+              <div className="w-6 h-px bg-slate-300"></div>
+              <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Administrasi</p>
+              <div className="flex-1 h-px bg-slate-300"></div>
             </div>
-            <div className="flex-1">
-              <p className="text-[#002A57] font-bold text-sm mb-0.5">Admin Panel</p>
-              <p className="text-slate-500 text-xs font-medium">Kelola merchant, export data, statistik</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <button
+                onClick={() => router.push('/admin')}
+                className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all active:scale-[0.98] border border-slate-100 md:col-span-2"
+              >
+                <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                  <Shield size={20} className="text-purple-600" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Manajemen User & Data</p>
+                  <p className="text-slate-400 text-[12px] font-medium">Kelola akun, hak akses, dan master cabang</p>
+                </div>
+                <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
+                  <ChevronRight size={14} />
+                </div>
+              </button>
             </div>
-            <ChevronRight size={20} className="text-[#0064B4] shrink-0" />
-          </button>
+          </>
         )}
 
-        {/* ── SEARCH ── */}
+        {/* ── DAFTAR CABANG ── */}
+        <div className="flex items-center gap-3 mb-5 opacity-70">
+          <div className="w-6 h-px bg-slate-300"></div>
+          <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Daftar Cabang</p>
+          <div className="flex-1 h-px bg-slate-300"></div>
+        </div>
+
+        {/* Stats summary row */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-slate-100">
+            <p className="text-[20px] font-extrabold text-[#003B79]">{branches.length}</p>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Cabang</p>
+          </div>
+          <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-slate-100">
+            <p className="text-[20px] font-extrabold text-[#003B79]">{totalMerchants}</p>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Merchant</p>
+          </div>
+          <div className="bg-white rounded-2xl p-3 text-center shadow-sm border border-slate-100">
+            <p className="text-[20px] font-extrabold text-[#003B79]">{totalCities}</p>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Kota</p>
+          </div>
+        </div>
+
+        {/* Search */}
         <div className="relative mb-6">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -238,67 +251,37 @@ export default function SelectBranchPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari nama cabang atau kota..."
-            className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-3.5 text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0064B4] focus:border-transparent shadow-sm transition-all"
+            className="w-full bg-white border border-slate-200 rounded-[16px] pl-11 pr-4 py-3.5 text-[14px] font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0064B4] focus:border-transparent shadow-sm transition-all"
           />
         </div>
 
-        {/* ── SECTION TITLE ── */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={18} className="text-[#003B79]" />
-            <p className="font-bold text-[#002A57] text-sm">Pilih Cabang Tujuan</p>
-          </div>
-          <span className="text-xs font-semibold text-slate-500 bg-slate-200/50 px-2.5 py-1 rounded-md">{filtered.length} Cabang</span>
-        </div>
-
-        {/* ── BRANCH LIST ── */}
+        {/* Branch List */}
         {Object.entries(grouped).map(([city, cityBranches]) => (
           <div key={city} className="mb-6">
-            {/* City header */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center bg-[#F5A623]/10 border border-[#F5A623]/20 px-3 py-1.5 rounded-lg">
-                <span className="text-xs font-bold text-[#D4880A] tracking-wide">{city.toUpperCase()}</span>
-              </div>
-              <div className="flex-1 h-px bg-slate-200" />
-            </div>
-
+            <p className="text-[12px] font-bold text-slate-500 mb-3 px-1 flex items-center gap-2">
+              <MapPin size={14} className="text-[#F5A623]" /> {city.toUpperCase()}
+            </p>
             <div className="space-y-3">
               {cityBranches.map((branch, idx) => {
                 const merchantCount = branch._count?.merchants ?? 0
-                const maxMerchant = Math.max(...cityBranches.map(b => b._count?.merchants ?? 0), 1)
-                const barWidth = Math.round((merchantCount / maxMerchant) * 100)
-
                 return (
                   <button
                     key={branch.id}
                     onClick={() => router.push(`/dashboard/${branch.id}`)}
-                    className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 text-left shadow-sm border border-slate-200 hover:border-[#0064B4] hover:shadow-md active:scale-[0.98] transition-all group"
+                    className="w-full bg-white rounded-[20px] p-4 flex items-center gap-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100 hover:border-[#0064B4]/30 hover:shadow-md active:scale-[0.98] transition-all group"
                   >
-                    {/* Rank number */}
-                    <div className="w-10 h-10 rounded-full bg-[#F5F7FA] border border-slate-100 flex items-center justify-center shrink-0 group-hover:bg-[#0064B4]/10 transition-colors">
-                      <span className="text-sm font-bold text-slate-600 group-hover:text-[#0064B4] transition-colors">{idx + 1}</span>
+                    <div className="w-10 h-10 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors text-slate-500 group-hover:text-[#0064B4]">
+                      <Building2 size={18} />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[#002A57] text-sm truncate">{branch.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1.5 mb-3">
-                        <MapPin size={12} className="text-slate-400" />
-                        <p className="text-xs font-medium text-slate-500">{branch.city}</p>
-                      </div>
-                      {/* Bar indicator */}
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-[90%]">
-                        <div
-                          className="h-full bg-[#0064B4] rounded-full transition-all duration-500 ease-out"
-                          style={{ width: `${barWidth}%` }}
-                        />
-                      </div>
+                      <p className="font-bold text-[#002A57] text-[15px] truncate mb-0.5">{branch.name}</p>
+                      <p className="text-[12px] font-medium text-slate-400">{merchantCount} Merchant terdaftar</p>
                     </div>
 
-                    <div className="text-right shrink-0 flex flex-col items-center justify-center">
-                      <p className="text-xl font-black text-[#003B79] leading-none mb-1">{merchantCount}</p>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Merchant</p>
+                    <div className="w-8 h-8 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-slate-400 group-hover:text-[#0064B4] group-hover:bg-blue-50 transition-colors">
+                      <ChevronRight size={16} />
                     </div>
-                    <ChevronRight size={20} className="text-slate-300 shrink-0 group-hover:text-[#0064B4] transition-colors ml-1" />
                   </button>
                 )
               })}
@@ -307,12 +290,18 @@ export default function SelectBranchPage() {
         ))}
 
         {filtered.length === 0 && (
-          <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 border-dashed">
-            <Search size={32} className="mx-auto mb-3 opacity-30 text-[#003B79]" />
-            <p className="font-bold text-[#002A57] text-sm">Cabang tidak ditemukan</p>
-            <p className="text-xs font-medium mt-1 text-slate-500">Coba kata kunci kota atau nama lain</p>
+          <div className="text-center py-12 text-slate-400">
+            <Search size={32} className="mx-auto mb-3 opacity-30" />
+            <p className="font-bold text-[#002A57] text-[14px]">Cabang tidak ditemukan</p>
+            <p className="text-[12px] font-medium mt-1">Coba kata kunci kota atau nama lain</p>
           </div>
         )}
+
+        <p className="text-center text-[11px] font-medium text-slate-400 mt-10 mb-4">
+          © 2024 PT Bank Mandiri (Persero) Tbk.<br/>
+          Sistem Informasi Acquisition Merchant
+        </p>
+
       </div>
     </div>
   )
