@@ -38,13 +38,13 @@ function PaymentPattern({ qrisPct, setQrisPct, debitPct, setDebitPct,
       {/* QRIS vs EDC */}
       <div>
         <div className="flex justify-between text-xs font-semibold mb-1">
-          <span className="flex items-center gap-1 text-green-600"><Smartphone size={10} /> QRIS EDC {qrisPct}%</span>
-          <span className="flex items-center gap-1 text-blue-600"><CreditCard size={10} /> Kartu EDC {edcPct}%</span>
+          <span className="flex items-center gap-1 text-[#0064B4]"><Smartphone size={10} /> QRIS EDC {qrisPct}%</span>
+          <span className="flex items-center gap-1 text-[#003B79]"><CreditCard size={10} /> Kartu EDC {edcPct}%</span>
         </div>
         <div className="relative h-7 flex items-center">
           <div className="absolute inset-x-0 h-2.5 rounded-full overflow-hidden flex">
-            <div className="bg-green-400 h-full transition-all" style={{ width: `${qrisPct}%` }} />
-            <div className="bg-blue-400 h-full flex-1" />
+            <div className="bg-[#0064B4] h-full transition-all" style={{ width: `${qrisPct}%` }} />
+            <div className="bg-[#003B79] h-full flex-1" />
           </div>
           <input type="range" min={0} max={100} value={qrisPct}
             onChange={e => setQrisPct(parseInt(e.target.value))}
@@ -57,13 +57,13 @@ function PaymentPattern({ qrisPct, setQrisPct, debitPct, setDebitPct,
       {edcPct > 0 && (
         <div>
           <div className="flex justify-between text-xs font-semibold mb-1">
-            <span className="text-blue-600">Debit {debitPct}%</span>
-            <span className="text-purple-600">Kredit {kreditPct}%</span>
+            <span className="text-[#003B79]">Debit {debitPct}%</span>
+            <span className="text-[#F5A623]">Kredit {kreditPct}%</span>
           </div>
           <div className="relative h-7 flex items-center">
             <div className="absolute inset-x-0 h-2.5 rounded-full overflow-hidden flex">
-              <div className="bg-blue-400 h-full transition-all" style={{ width: `${debitPct}%` }} />
-              <div className="bg-purple-400 h-full flex-1" />
+              <div className="bg-[#003B79] h-full transition-all" style={{ width: `${debitPct}%` }} />
+              <div className="bg-[#F5A623] h-full flex-1" />
             </div>
             <input type="range" min={0} max={100} value={debitPct}
               onChange={e => setDebitPct(parseInt(e.target.value))}
@@ -77,26 +77,26 @@ function PaymentPattern({ qrisPct, setQrisPct, debitPct, setDebitPct,
       {edcPct > 0 && (
         <div className={`grid gap-2 ${kreditPct > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
           {debitPct > 0 && (
-            <div className="bg-blue-50 rounded-xl p-2.5">
-              <p className="text-xs font-bold text-blue-700 mb-1.5">Kartu Debit</p>
-              <div className="flex justify-between text-xs text-blue-500 mb-1">
+            <div className="bg-[#F5F7FA] border border-slate-200 rounded-xl p-2.5">
+              <p className="text-xs font-bold text-[#003B79] mb-1.5">Kartu Debit</p>
+              <div className="flex justify-between text-xs text-slate-500 mb-1">
                 <span>On-Us {debitOnUsPct}%</span><span>Off-Us {100 - debitOnUsPct}%</span>
               </div>
               <input type="range" min={0} max={100} value={debitOnUsPct}
                 onChange={e => setDebitOnUsPct(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-blue-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#0064B4]"
               />
             </div>
           )}
           {kreditPct > 0 && (
-            <div className="bg-purple-50 rounded-xl p-2.5">
-              <p className="text-xs font-bold text-purple-700 mb-1.5">Kartu Kredit</p>
-              <div className="flex justify-between text-xs text-purple-500 mb-1">
+            <div className="bg-[#F5F7FA] border border-slate-200 rounded-xl p-2.5">
+              <p className="text-xs font-bold text-[#003B79] mb-1.5">Kartu Kredit</p>
+              <div className="flex justify-between text-xs text-slate-500 mb-1">
                 <span>On-Us {kreditOnUsPct}%</span><span>Off-Us {100 - kreditOnUsPct}%</span>
               </div>
               <input type="range" min={0} max={100} value={kreditOnUsPct}
                 onChange={e => setKreditOnUsPct(parseInt(e.target.value))}
-                className="w-full h-1.5 bg-purple-200 rounded-full appearance-none cursor-pointer accent-purple-600"
+                className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#F5A623]"
               />
             </div>
           )}
@@ -494,14 +494,14 @@ function NegotiationContent() {
       />
 
       {/* Hero */}
-      <div className="bg-mandiri-700 px-4 py-5 text-white">
+      <div className="bg-[#003B79] px-4 py-5 text-white">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
-            <PiggyBank size={20} className="text-white" />
+          <div className="w-10 h-10 bg-[#F5A623] rounded-xl flex items-center justify-center shrink-0">
+            <PiggyBank size={20} className="text-[#003B79]" />
           </div>
           <div>
             <h1 className="font-bold text-base">Simulasi Penghematan</h1>
-            <p className="text-mandiri-200 text-xs">
+            <p className="text-blue-100 text-xs">
               Tunjukkan berapa merchant bisa hemat dengan beralih ke Mandiri
             </p>
           </div>
@@ -513,7 +513,7 @@ function NegotiationContent() {
         {/* Step 1: Volume */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 bg-mandiri-700 rounded-full flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 bg-[#003B79] rounded-full flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-bold">1</span>
             </div>
             <p className="font-bold text-slate-800 text-sm">Input Omzet Merchant per Bulan</p>
@@ -524,17 +524,17 @@ function NegotiationContent() {
               type="text" inputMode="numeric" value={volume}
               onChange={e => setVolume(e.target.value.replace(/\D/g, ''))}
               placeholder="0"
-              className="w-full border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-mandiri-300 bg-slate-50"
+              className="w-full border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#0064B4] bg-slate-50"
             />
           </div>
-          {vol > 0 && <p className="text-xs text-mandiri-600 font-bold mt-1.5">{formatRupiah(vol)} / bulan</p>}
+          {vol > 0 && <p className="text-xs text-[#0064B4] font-bold mt-1.5">{formatRupiah(vol)} / bulan</p>}
           <p className="text-xs text-slate-400 mt-1.5">💡 &quot;Rata-rata omzet per bulan berapa pak?&quot;</p>
         </div>
 
         {/* Step 2a: Pola Pembayaran EDC Bank Lain */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-bold">2</span>
             </div>
             <div>
@@ -557,8 +557,8 @@ function NegotiationContent() {
                   onClick={() => setSelectedBank(prev => prev === b ? '' : b)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
                     selectedBank === b
-                      ? 'bg-red-500 text-white border-red-500'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-red-300'
+                      ? 'bg-slate-600 text-white border-slate-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   {b}
@@ -572,15 +572,15 @@ function NegotiationContent() {
             debitPct={exDebitPct} setDebitPct={setExDebitPct}
             debitOnUsPct={exDebitOnUsPct} setDebitOnUsPct={setExDebitOnUsPct}
             kreditOnUsPct={exKreditOnUsPct} setKreditOnUsPct={setExKreditOnUsPct}
-            thumbColor={`${THUMB} [&::-webkit-slider-thumb]:border-red-500`}
+            thumbColor={`${THUMB} [&::-webkit-slider-thumb]:border-slate-600`}
           />
           <p className="text-xs text-slate-400 mt-2">💡 &quot;Customer biasanya bayar pakai QR atau kartu ya pak?&quot;</p>
         </div>
 
         {/* Step 2b: Pola Pembayaran Mandiri */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-mandiri-200">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 bg-mandiri-700 rounded-full flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 bg-[#003B79] rounded-full flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-bold">3</span>
             </div>
             <div>
@@ -596,8 +596,8 @@ function NegotiationContent() {
             kreditOnUsPct={mPatKreditOnUsPct} setKreditOnUsPct={setMPatKreditOnUsPct}
             thumbColor={`${THUMB} [&::-webkit-slider-thumb]:border-mandiri-700`}
           />
-          <div className="mt-2 bg-mandiri-50 rounded-xl px-3 py-2">
-            <p className="text-xs text-mandiri-700 font-medium">
+          <div className="mt-2 bg-[#F5F7FA] border border-slate-100 rounded-xl px-3 py-2">
+            <p className="text-xs text-[#003B79] font-medium">
               💡 On-Us biasanya lebih tinggi — nasabah Mandiri cenderung bayar pakai kartu Mandiri
             </p>
           </div>
@@ -606,7 +606,7 @@ function NegotiationContent() {
         {/* Tarif Bank Existing */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <button onClick={() => setShowExRates(v => !v)} className="w-full flex items-center gap-3 p-4">
-            <div className="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center text-sm shrink-0">🏦</div>
+            <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-sm shrink-0">🏦</div>
             <div className="flex-1 text-left min-w-0">
               <p className="font-bold text-slate-800 text-sm">Tarif Bank Existing</p>
               <p className="text-xs text-slate-400 truncate">
@@ -617,7 +617,7 @@ function NegotiationContent() {
           </button>
           {showExRates && (
             <div className="px-4 pb-4 border-t border-slate-100">
-              <RateInputs ringColor="focus:ring-red-200" rates={[
+              <RateInputs ringColor="focus:ring-slate-300" rates={[
                 ['Debit On-Us (%)', exDebitOnUs, setExDebitOnUs],
                 ['Debit Off-Us (%)', exDebitOffUs, setExDebitOffUs],
                 ['Kredit On-Us (%)', exKreditOnUs, setExKreditOnUs],
@@ -631,7 +631,7 @@ function NegotiationContent() {
         {/* Tarif Mandiri */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <button onClick={() => setShowMRates(v => !v)} className="w-full flex items-center gap-3 p-4">
-            <div className="w-7 h-7 bg-mandiri-100 rounded-lg flex items-center justify-center text-sm shrink-0">🏧</div>
+            <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center text-sm shrink-0">🏧</div>
             <div className="flex-1 text-left min-w-0">
               <p className="font-bold text-slate-800 text-sm">Tarif Mandiri</p>
               <p className="text-xs text-slate-400 truncate">
@@ -642,7 +642,7 @@ function NegotiationContent() {
           </button>
           {showMRates && (
             <div className="px-4 pb-4 border-t border-slate-100">
-              <RateInputs ringColor="focus:ring-mandiri-200" rates={[
+              <RateInputs ringColor="focus:ring-[#0064B4]" rates={[
                 ['Debit On-Us (%)', mDebitOnUs, setMDebitOnUs],
                 ['Debit Off-Us (%)', mDebitOffUs, setMDebitOffUs],
                 ['Kredit On-Us (%)', mKreditOnUs, setMKreditOnUs],
@@ -661,30 +661,30 @@ function NegotiationContent() {
               <p className="font-bold text-slate-700 text-xs mb-3 uppercase tracking-wide">Ringkasan Input</p>
               <div className="grid grid-cols-2 gap-2">
                 {/* Bank Lain */}
-                <div className="bg-red-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-red-500 mb-2">🏦 {selectedBank || 'Bank Lain'}</p>
+                <div className="bg-[#F5F7FA] border border-slate-200 rounded-xl p-3">
+                  <p className="text-xs font-bold text-slate-600 mb-2">🏦 {selectedBank || 'Bank Lain'}</p>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">QRIS</span>
-                      <span className="font-semibold text-green-700">{formatRupiah(calc.exQrisVol)}</span>
+                      <span className="font-semibold text-[#0064B4]">{formatRupiah(calc.exQrisVol)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Kartu</span>
-                      <span className="font-semibold text-blue-700">{formatRupiah(calc.exEdcVol)}</span>
+                      <span className="font-semibold text-[#003B79]">{formatRupiah(calc.exEdcVol)}</span>
                     </div>
                   </div>
                 </div>
                 {/* Mandiri */}
-                <div className="bg-mandiri-50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-mandiri-600 mb-2">🏧 Mandiri</p>
+                <div className="bg-[#F5F7FA] border border-slate-100 rounded-xl p-3">
+                  <p className="text-xs font-bold text-[#0064B4] mb-2">🏧 Mandiri</p>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">QRIS</span>
-                      <span className="font-semibold text-green-700">{formatRupiah(calc.mQrisVol)}</span>
+                      <span className="font-semibold text-[#0064B4]">{formatRupiah(calc.mQrisVol)}</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-500">Kartu</span>
-                      <span className="font-semibold text-blue-700">{formatRupiah(calc.mEdcVol)}</span>
+                      <span className="font-semibold text-[#003B79]">{formatRupiah(calc.mEdcVol)}</span>
                     </div>
                   </div>
                 </div>
@@ -695,14 +695,14 @@ function NegotiationContent() {
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
               <p className="font-bold text-slate-800 text-sm mb-3">Perbandingan Biaya Transaksi / Bulan</p>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-center">
-                  <p className="text-xs font-bold text-red-500 mb-1">🏦 Bank Existing</p>
-                  <p className="text-xl font-extrabold text-red-600 leading-tight">{fmtFee(calc.existingTotal)}</p>
-                  <p className="text-xs text-red-400 mt-0.5">per bulan</p>
+                <div className="bg-[#F5F7FA] border border-slate-200 border border-slate-200 rounded-xl p-4 text-center">
+                  <p className="text-xs font-bold text-slate-600 mb-1">🏦 Bank Existing</p>
+                  <p className="text-xl font-extrabold text-slate-700 leading-tight">{fmtFee(calc.existingTotal)}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">per bulan</p>
                 </div>
-                <div className="bg-mandiri-50 border border-mandiri-200 rounded-xl p-4 text-center">
-                  <p className="text-xs font-bold text-mandiri-600 mb-1">🏧 Bank Mandiri</p>
-                  <p className="text-xl font-extrabold text-mandiri-700 leading-tight">{fmtFee(calc.mandiriTotal)}</p>
+                <div className="bg-[#F5F7FA] border border-slate-100 border border-slate-200 rounded-xl p-4 text-center">
+                  <p className="text-xs font-bold text-[#0064B4] mb-1">🏧 Bank Mandiri</p>
+                  <p className="text-xl font-extrabold text-[#003B79] leading-tight">{fmtFee(calc.mandiriTotal)}</p>
                   <p className="text-xs text-mandiri-400 mt-0.5">per bulan</p>
                 </div>
               </div>
@@ -711,11 +711,11 @@ function NegotiationContent() {
             {/* Savings */}
             {calc.savingsPerMonth > 0 ? (
               <>
-                <div className="bg-green-600 rounded-2xl p-5 text-center shadow-lg">
-                  <PiggyBank size={28} className="text-green-200 mx-auto mb-2" />
-                  <p className="text-green-100 text-sm font-semibold">Merchant Bisa Hemat</p>
+                <div className="bg-[#003B79] rounded-2xl p-5 text-center shadow-lg">
+                  <PiggyBank size={28} className="text-blue-200 mx-auto mb-2" />
+                  <p className="text-blue-100 text-sm font-semibold">Merchant Bisa Hemat</p>
                   <p className="text-white text-3xl font-extrabold mt-1">{formatRupiah(calc.savingsPerMonth)}</p>
-                  <p className="text-green-200 text-xs mt-1.5">
+                  <p className="text-blue-200 text-xs mt-1.5">
                     per bulan · {calc.savingsPct.toFixed(1)}% lebih hemat dari sekarang
                   </p>
                 </div>
@@ -725,12 +725,12 @@ function NegotiationContent() {
                   <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
                     <Calendar size={18} className="text-mandiri-400 mx-auto mb-1" />
                     <p className="text-xs text-slate-500 mb-1">Hemat 6 Bulan</p>
-                    <p className="text-lg font-extrabold text-mandiri-700">{formatRupiah(calc.savings6Month)}</p>
+                    <p className="text-lg font-extrabold text-[#003B79]">{formatRupiah(calc.savings6Month)}</p>
                   </div>
                   <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
                     <TrendingUp size={18} className="text-mandiri-400 mx-auto mb-1" />
                     <p className="text-xs text-slate-500 mb-1">Hemat 1 Tahun</p>
-                    <p className="text-lg font-extrabold text-mandiri-700">{formatRupiah(calc.savings1Year)}</p>
+                    <p className="text-lg font-extrabold text-[#003B79]">{formatRupiah(calc.savings1Year)}</p>
                   </div>
                 </div>
 
@@ -753,21 +753,21 @@ function NegotiationContent() {
                 </div>
 
                 {/* CTA */}
-                <div className="bg-mandiri-700 rounded-2xl p-4 space-y-2.5">
+                <div className="bg-[#003B79] rounded-2xl p-4 space-y-2.5">
                   <p className="text-white font-bold text-sm text-center">Siap Hemat Bersama Mandiri?</p>
                   <button onClick={goBack}
-                    className="w-full bg-mandiri-yellow text-white rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all"
+                    className="w-full bg-[#F5A623] text-white rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all"
                   >
                     <CheckCircle2 size={15} /> Lanjutkan Proses Akuisisi <ArrowRight size={13} />
                   </button>
                   <button onClick={goBack}
-                    className="w-full bg-mandiri-600/60 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-mandiri-600 transition-colors"
+                    className="w-full bg-white border border-[#003B79] text-[#003B79] text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
                   >
                     <Clock size={14} /> Jadwalkan Follow Up
                   </button>
                   <button
                     onClick={handleDownloadPDF}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+                    className="w-full bg-[#F5A623] hover:bg-slate-900 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
                   >
                     <FileText size={14} /> Download PDF untuk Merchant
                   </button>
@@ -807,7 +807,7 @@ export default function NegotiationPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-mandiri-200 border-t-mandiri-700 rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-mandiri-700 rounded-full animate-spin" />
       </div>
     }>
       <NegotiationContent />
