@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Lock, User, Building2, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Building2, AlertCircle, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
@@ -43,162 +43,166 @@ export default function LoginPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#003B79]">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#032d5f] to-[#0b5191]">
         <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row font-sans">
-      {/* Left panel – branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#003B79] flex-col items-center justify-center p-12 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#002A57] rounded-full opacity-30 pointer-events-none" />
-        <div className="absolute -bottom-40 -right-20 w-[28rem] h-[28rem] bg-[#001935] rounded-full opacity-40 pointer-events-none" />
-        <div className="absolute top-1/3 right-0 w-64 h-64 bg-[#F5A623]/10 rounded-full pointer-events-none" />
-
-        <div className="relative z-10 text-white text-center">
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-3.5 mb-8">
-            <div className="w-14 h-14 bg-[#002A57] rounded-[16px] flex items-center justify-center shadow-lg border border-white/5">
-              <Building2 size={28} className="text-[#F5A623]" />
-            </div>
-            <div className="text-left">
-              <p className="text-[#F5A623] font-bold text-[13px] tracking-widest uppercase mb-0.5">Bank Mandiri</p>
-              <p className="text-white font-extrabold text-[28px] leading-none tracking-tight">Portal Akuisisi</p>
-            </div>
-          </div>
-
-          <h1 className="text-3xl font-bold mb-4 leading-tight">
-            Sistem Informasi<br />Acquisition Merchant
-          </h1>
-          <p className="text-blue-100 text-[15px] max-w-sm mx-auto leading-relaxed font-medium">
-            Platform cerdas untuk tim sales dalam mengakuisisi merchant EDC & QRIS di area Kalimantan
-          </p>
-
-          <div className="mt-12 grid grid-cols-3 gap-4">
-            {[
-              { label: 'Merchant', value: '96+' },
-              { label: 'Cabang', value: '27' },
-              { label: 'Kota', value: '12+' },
-            ].map(item => (
-              <div key={item.label} className="bg-[#002A57]/50 rounded-[20px] p-4 backdrop-blur-md border border-white/10 shadow-sm">
-                <p className="text-[26px] font-black text-[#F5A623]">{item.value}</p>
-                <p className="text-[13px] font-medium text-blue-100 mt-1">{item.label}</p>
-              </div>
-            ))}
-          </div>
+    <div className="min-h-screen relative flex items-center justify-center p-4 bg-gradient-to-b from-[#032d5f] to-[#0b5191] overflow-hidden font-sans">
+      
+      {/* City Background Silhouette */}
+      <div className="absolute bottom-0 left-0 w-full h-[40vh] pointer-events-none overflow-hidden">
+        {/* Layer 1 - Back */}
+        <div className="absolute bottom-0 w-[120%] -left-[10%] h-full flex items-end justify-center opacity-5">
+          <div className="w-16 h-[30%] bg-white mx-0.5"></div>
+          <div className="w-24 h-[50%] bg-white mx-0.5"></div>
+          <div className="w-20 h-[40%] bg-white mx-0.5"></div>
+          <div className="w-32 h-[70%] bg-white mx-0.5"></div>
+          <div className="w-16 h-[55%] bg-white mx-0.5"></div>
+          <div className="w-28 h-[80%] bg-white mx-0.5"></div>
+          <div className="w-20 h-[65%] bg-white mx-0.5"></div>
+          <div className="w-24 h-[45%] bg-white mx-0.5"></div>
+          <div className="w-32 h-[85%] bg-white mx-0.5"></div>
+          <div className="w-16 h-[60%] bg-white mx-0.5"></div>
+          <div className="w-20 h-[35%] bg-white mx-0.5"></div>
+          <div className="w-28 h-[75%] bg-white mx-0.5"></div>
+          <div className="w-24 h-[50%] bg-white mx-0.5"></div>
+          <div className="w-32 h-[80%] bg-white mx-0.5"></div>
+          <div className="w-16 h-[40%] bg-white mx-0.5"></div>
+        </div>
+        {/* Layer 2 - Front */}
+        <div className="absolute bottom-0 w-[120%] -left-[10%] h-full flex items-end justify-center opacity-10">
+          <div className="w-20 h-[20%] bg-white mx-0.5"></div>
+          <div className="w-16 h-[40%] bg-white mx-0.5"></div>
+          <div className="w-28 h-[25%] bg-white mx-0.5"></div>
+          <div className="w-24 h-[55%] bg-white mx-0.5"></div>
+          <div className="w-16 h-[30%] bg-white mx-0.5"></div>
+          <div className="w-32 h-[65%] bg-white mx-0.5"></div>
+          <div className="w-20 h-[45%] bg-white mx-0.5"></div>
+          <div className="w-24 h-[70%] bg-white mx-0.5"></div>
+          <div className="w-28 h-[35%] bg-white mx-0.5"></div>
+          <div className="w-16 h-[50%] bg-white mx-0.5"></div>
+          <div className="w-20 h-[25%] bg-white mx-0.5"></div>
+          <div className="w-32 h-[60%] bg-white mx-0.5"></div>
+          <div className="w-24 h-[15%] bg-white mx-0.5"></div>
+          <div className="w-28 h-[45%] bg-white mx-0.5"></div>
+          <div className="w-20 h-[30%] bg-white mx-0.5"></div>
         </div>
       </div>
 
-      {/* Right panel – login form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F5F7FA] min-h-screen lg:min-h-0">
+      {/* Main Login Card */}
+      <div className="w-full max-w-md relative z-10 animate-slide-up">
+        <div className="bg-white rounded-[24px] p-8 md:p-10 shadow-2xl">
+          
+          {/* Header & Logo */}
+          <div className="flex flex-col items-center justify-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-[#003B79] rounded-[14px] flex items-center justify-center shadow-md">
+                <Building2 size={24} className="text-[#F5A623]" />
+              </div>
+              <div className="text-left">
+                <p className="text-[11px] font-bold text-[#0064B4] tracking-widest uppercase mb-0.5">Bank Mandiri</p>
+                <p className="font-extrabold text-[#002A57] text-[22px] leading-none tracking-tight">Portal Akuisisi</p>
+              </div>
+            </div>
+            <p className="text-[13px] text-slate-500 mt-2 text-center font-medium max-w-[250px] leading-relaxed">
+              Sistem Informasi Acquisition Merchant
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-slate-800 mb-2">Username</label>
+              <div className="relative">
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0064B4]" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="Masukkan username"
+                  className={cn(
+                    'w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0064B4] focus:border-transparent transition-all placeholder:text-slate-400 placeholder:font-normal',
+                    error && 'border-red-300 focus:ring-red-400'
+                  )}
+                  required
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-800 mb-2">Password</label>
+              <div className="relative">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0064B4]" />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Masukkan password"
+                  className={cn(
+                    'w-full pl-11 pr-11 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0064B4] focus:border-transparent transition-all placeholder:text-slate-400 placeholder:font-normal',
+                    error && 'border-red-300 focus:ring-red-400'
+                  )}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0064B4] transition-colors"
+                >
+                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 text-sm font-medium text-red-600 bg-red-50 rounded-xl p-3 border border-red-100">
+                <AlertCircle size={16} className="shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#003B79] hover:bg-[#002A57] active:scale-[0.98] text-white font-bold py-3.5 rounded-xl text-[15px] transition-all mt-4 shadow-md"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Memproses...
+                </span>
+              ) : 'Masuk'}
+            </button>
+          </form>
+
+          <div className="mt-8 flex items-center justify-center opacity-60">
+            <div className="w-full h-px bg-slate-300"></div>
+            <span className="px-4 text-[13px] text-slate-500 font-medium">atau</span>
+            <div className="w-full h-px bg-slate-300"></div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <button className="inline-flex items-center gap-2 text-[14px] font-bold text-[#0064B4] hover:text-[#003B79] transition-colors">
+              <ShieldCheck size={18} />
+              Butuh bantuan?
+            </button>
+          </div>
+        </div>
         
-        <div className="w-full max-w-md">
-          {/* Mobile logo - aligns with the user's screenshot */}
-          <div className="lg:hidden flex items-center justify-center gap-3.5 mb-10">
-            <div className="w-14 h-14 bg-[#003B79] rounded-[16px] flex items-center justify-center shadow-md">
-              <Building2 size={24} className="text-[#F5A623]" />
-            </div>
-            <div className="text-left">
-              <p className="text-[11px] font-bold text-[#0064B4] tracking-widest uppercase mb-0.5">Bank Mandiri</p>
-              <p className="font-extrabold text-[#002A57] text-[22px] leading-none tracking-tight">Portal Akuisisi</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[24px] p-8 md:p-10 shadow-[0_4px_24px_rgba(0,0,0,0.04)] animate-slide-up border border-slate-100">
-            <div className="mb-8 text-center md:text-left">
-              <h2 className="text-[26px] font-extrabold text-[#002A57] leading-tight mb-2">Selamat Datang</h2>
-              <p className="text-[14px] font-medium text-slate-500">Masuk dengan akun sales Anda</p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-[13px] font-bold text-[#002A57] mb-2">Username</label>
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="Masukkan username"
-                    className={cn(
-                      'w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-[14px] text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-[#0064B4] focus:border-transparent transition-all placeholder:text-slate-400 placeholder:font-normal',
-                      error && 'border-red-300 focus:ring-red-400'
-                    )}
-                    required
-                    autoComplete="username"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-bold text-[#002A57] mb-2">Password</label>
-                <div className="relative">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Masukkan password"
-                    className={cn(
-                      'w-full pl-11 pr-12 py-3.5 bg-white border border-slate-200 rounded-[14px] text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-[#0064B4] focus:border-transparent transition-all placeholder:text-slate-400 placeholder:font-normal',
-                      error && 'border-red-300 focus:ring-red-400'
-                    )}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#0064B4] transition-colors"
-                  >
-                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 text-[13px] font-medium text-red-600 bg-red-50 rounded-[12px] p-3 border border-red-100">
-                  <AlertCircle size={16} className="shrink-0" />
-                  {error}
-                </div>
-              )}
-
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full bg-[#003B79] hover:bg-[#002A57] active:scale-[0.98] text-white font-bold py-3.5 rounded-[14px] text-[15px] transition-all shadow-md mt-4"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Memproses...
-                  </span>
-                ) : 'Masuk'}
-              </button>
-            </form>
-
-            <div className="mt-8 p-4 bg-slate-50 rounded-[16px] border border-slate-100 text-[12px] text-slate-600 space-y-2.5">
-              <p className="font-bold text-[#002A57]">Demo Login:</p>
-              <div className="flex items-center gap-2 font-medium">
-                <span className="w-10">Sales:</span>
-                <span className="font-mono bg-slate-200/50 text-[#003B79] px-2 py-1 rounded-[6px]">demo</span>
-                <span className="text-slate-400">/</span>
-                <span className="font-mono bg-slate-200/50 text-[#003B79] px-2 py-1 rounded-[6px]">mandiri123</span>
-              </div>
-              <div className="flex items-center gap-2 font-medium">
-                <span className="w-10">Admin:</span>
-                <span className="font-mono bg-slate-200/50 text-[#003B79] px-2 py-1 rounded-[6px]">admin</span>
-                <span className="text-slate-400">/</span>
-                <span className="font-mono bg-slate-200/50 text-[#003B79] px-2 py-1 rounded-[6px]">admin2024</span>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-center text-[12px] font-medium text-slate-400 mt-8">
-            © 2024 PT Bank Mandiri (Persero) Tbk
+        {/* Demo Login Information - styled to be subtle outside the card */}
+        <div className="mt-6 p-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl text-xs text-blue-100 space-y-1.5 opacity-80 hover:opacity-100 transition-opacity">
+          <p className="font-semibold text-white/90">Akun Demo:</p>
+          <p className="flex justify-between items-center">
+            <span>Sales</span> 
+            <span className="font-mono bg-[#001935]/40 px-2 py-1 rounded text-white/90 border border-white/10">demo / mandiri123</span>
+          </p>
+          <p className="flex justify-between items-center">
+            <span>Admin</span> 
+            <span className="font-mono bg-[#001935]/40 px-2 py-1 rounded text-white/90 border border-white/10">admin / admin2024</span>
           </p>
         </div>
       </div>
