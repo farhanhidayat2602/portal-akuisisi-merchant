@@ -9,6 +9,7 @@ import {
   CheckCircle, XCircle, Clock, BarChart2, Users,
   Store, AlertTriangle, Download, FileSpreadsheet,
   X, ChevronRight, Star, Zap, Trophy, MapPin,
+  UserPlus, Pencil, Trash2, KeyRound, ShieldCheck,
 } from 'lucide-react'
 import { formatRupiah, getStatusColor, getStatusLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -69,7 +70,7 @@ export default function AdminPage() {
   const [stats,         setStats]         = useState<Stats | null>(null)
   const [scraping,      setScraping]      = useState(false)
   const [loadingStats,  setLoadingStats]  = useState(true)
-  const [activeTab,     setActiveTab]     = useState<'overview' | 'merchants' | 'scraping'>('overview')
+  const [activeTab,     setActiveTab]     = useState<'overview' | 'merchants' | 'users' | 'scraping'>('overview')
 
   // Raw data for modals
   const [allMerchants,  setAllMerchants]  = useState<any[]>([])
@@ -561,6 +562,7 @@ export default function AdminPage() {
           {([
             { key: 'overview',  label: 'Overview',  icon: BarChart2 },
             { key: 'merchants', label: 'Merchant',  icon: Store },
+            { key: 'users',     label: 'Users',     icon: Users },
             { key: 'scraping',  label: 'Scraping',  icon: RefreshCw },
           ] as { key: typeof activeTab; label: string; icon: any }[]).map(tab => (
             <button
@@ -687,6 +689,9 @@ export default function AdminPage() {
 
         {/* MERCHANTS TAB */}
         {activeTab === 'merchants' && <MerchantManagement />}
+
+        {/* USERS TAB */}
+        {activeTab === 'users' && <UserManagement />}
 
         {/* SCRAPING TAB */}
         {activeTab === 'scraping' && (
@@ -1049,6 +1054,362 @@ function MerchantManagement() {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── User Management sub-component ───────────────────────────────────────────
+const EMPTY_USER_FORM = {
+  name: '', username: '', email: '', password: '', role: 'SALES', branchId: '',
+}
+
+function UserManagement() {
+  const [users,    setUsers]    = useState<any[]>([])
+  const [branches, setBranches] = useState<any[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [search,   setSearch]   = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editing,  setEditing]  = useState<any | null>(null)  // null = create mode
+  const [form,     setForm]     = useState({ ...EMPTY_USER_FORM })
+  const [saving,   setSaving]   = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/users').then(r => r.json()),
+      fetch('/api/branches').then(r => r.json()),
+    ]).then(([u, b]) => {
+      setUsers(Array.isArray(u) ? u : [])
+      setBranches(Array.isArray(b) ? b : [])
+      setLoading(false)
+    })
+  }, [])
+
+  const filtered = users.filter(u => {
+    const q = search.toLowerCase()
+    return !q
+      || u.name.toLowerCase().includes(q)
+      || u.username.toLowerCase().includes(q)
+      || (u.branch?.name ?? '').toLowerCase().includes(q)
+  })
+
+  function openCreate() {
+    setEditing(null)
+    setForm({ ...EMPTY_USER_FORM })
+    setShowForm(true)
+  }
+
+  function openEdit(user: any) {
+    setEditing(user)
+    setForm({
+      name:     user.name,
+      username: user.username,
+      email:    user.email,
+      password: '',
+      role:     user.role,
+      branchId: user.branchId ?? '',
+    })
+    setShowForm(true)
+  }
+
+  function cancelForm() {
+    setShowForm(false)
+    setEditing(null)
+    setForm({ ...EMPTY_USER_FORM })
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.name || !form.username || !form.email) {
+      toast.error('Nama, username, dan email wajib diisi')
+      return
+    }
+    if (!editing && !form.password) {
+      toast.error('Password wajib diisi saat membuat akun baru')
+      return
+    }
+    setSaving(true)
+    const tid = toast.loading(editing ? 'Menyimpan perubahan...' : 'Membuat akun...')
+    try {
+      const url    = editing ? `/api/admin/users/${editing.id}` : '/api/admin/users'
+      const method = editing ? 'PUT' : 'POST'
+      const body: any = { ...form, branchId: form.branchId || null }
+      if (editing && !body.password) delete body.password
+
+      const res  = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Gagal menyimpan')
+
+      if (editing) {
+        setUsers(prev => prev.map(u => u.id === data.id ? data : u))
+        toast.success('Akun berhasil diperbarui', { id: tid })
+      } else {
+        setUsers(prev => [data, ...prev])
+        toast.success(`Akun ${data.name} berhasil dibuat`, { id: tid })
+      }
+      cancelForm()
+    } catch (err: any) {
+      toast.error(err.message, { id: tid })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(user: any) {
+    setDeleting(user.id)
+    const tid = toast.loading(`Menghapus ${user.name}...`)
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Gagal menghapus')
+      setUsers(prev => prev.filter(u => u.id !== user.id))
+      toast.success(`${user.name} berhasil dihapus`, { id: tid })
+    } catch (err: any) {
+      toast.error(err.message, { id: tid })
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40">
+      <div className="w-8 h-8 border-4 border-mandiri-200 border-t-mandiri-700 rounded-full animate-spin" />
+    </div>
+  )
+
+  const adminCount = users.filter(u => u.role === 'ADMIN').length
+  const salesCount = users.filter(u => u.role === 'SALES').length
+
+  return (
+    <div className="space-y-3">
+      {/* Summary chips */}
+      <div className="flex gap-2">
+        <div className="flex items-center gap-2 bg-mandiri-700 text-white rounded-xl px-3 py-1.5">
+          <ShieldCheck size={13} />
+          <span className="text-xs font-bold">{adminCount} Admin</span>
+        </div>
+        <div className="flex items-center gap-2 bg-slate-200 text-slate-700 rounded-xl px-3 py-1.5">
+          <Users size={13} />
+          <span className="text-xs font-bold">{salesCount} Sales</span>
+        </div>
+      </div>
+
+      {/* Search + Add */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama, username, cabang..."
+            className="input pl-9 text-sm"
+          />
+        </div>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-1.5 bg-mandiri-700 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-mandiri-800 transition-colors shrink-0"
+        >
+          <UserPlus size={15} />
+          Tambah User
+        </button>
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <div className="card p-5 border-2 border-mandiri-200 bg-mandiri-50">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-mandiri-700 flex items-center gap-2">
+              <UserPlus size={16} />
+              {editing ? `Edit Akun: ${editing.name}` : 'Buat Akun Sales Baru'}
+            </h3>
+            <button onClick={cancelForm} className="text-slate-400 hover:text-slate-600">
+              <X size={18} />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="label">Nama Lengkap <span className="text-red-500">*</span></label>
+                <input
+                  className="input text-sm"
+                  placeholder="cth: Andi Pratama"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">Username <span className="text-red-500">*</span></label>
+                <input
+                  className={cn('input text-sm', editing && 'bg-slate-100 cursor-not-allowed')}
+                  placeholder="cth: klandasan"
+                  value={form.username}
+                  onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                  readOnly={!!editing}
+                  required
+                />
+                {editing && <p className="text-xs text-slate-400 mt-0.5">Username tidak bisa diubah</p>}
+              </div>
+            </div>
+            <div>
+              <label className="label">Email <span className="text-red-500">*</span></label>
+              <input
+                type="email"
+                className="input text-sm"
+                placeholder="cth: klandasan@bankmandiri.co.id"
+                value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="label flex items-center gap-1">
+                <KeyRound size={12} />
+                {editing ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password'}
+                {!editing && <span className="text-red-500">*</span>}
+              </label>
+              <input
+                type="password"
+                className="input text-sm"
+                placeholder={editing ? '(biarkan kosong untuk tidak mengubah)' : 'Min. 6 karakter'}
+                value={form.password}
+                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                required={!editing}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="label">Role</label>
+                <select
+                  className="input text-sm"
+                  value={form.role}
+                  onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                >
+                  <option value="SALES">Sales</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Cabang / KC</label>
+                <select
+                  className="input text-sm"
+                  value={form.branchId}
+                  onChange={e => setForm(f => ({ ...f, branchId: e.target.value }))}
+                >
+                  <option value="">-- Tanpa Cabang --</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name} ({b.city})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button type="submit" disabled={saving} className="btn-primary flex-1">
+                {saving
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                  : editing
+                    ? <><Pencil size={15} /> Simpan Perubahan</>
+                    : <><UserPlus size={15} /> Buat Akun</>
+                }
+              </button>
+              <button type="button" onClick={cancelForm} className="btn-secondary px-4">
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <p className="text-xs text-slate-400">{filtered.length} user ditemukan</p>
+
+      {/* User list */}
+      <div className="card overflow-hidden">
+        <div className="divide-y divide-slate-50 max-h-[60vh] overflow-y-auto">
+          {filtered.length === 0 && (
+            <div className="py-12 text-center text-slate-400">
+              <Users size={32} className="mx-auto mb-2 opacity-20" />
+              <p className="text-sm">Tidak ada user ditemukan</p>
+            </div>
+          )}
+          {filtered.map(user => (
+            <div key={user.id} className="flex items-center gap-3 px-4 py-3">
+              {/* Avatar */}
+              <div className={cn(
+                'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold text-white',
+                user.role === 'ADMIN' ? 'bg-mandiri-700' : 'bg-mandiri-400'
+              )}>
+                {user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+                  {user.role === 'ADMIN' && (
+                    <ShieldCheck size={12} className="text-mandiri-700 shrink-0" />
+                  )}
+                </div>
+                <p className="text-xs text-slate-400">@{user.username}</p>
+                <p className="text-xs text-slate-400 truncate">
+                  {user.branch ? `${user.branch.name} · ${user.branch.city}` : 'Tanpa cabang'}
+                </p>
+              </div>
+
+              {/* Points */}
+              <div className="text-right shrink-0 hidden sm:block">
+                <p className="text-sm font-bold text-mandiri-700">{user.points}</p>
+                <p className="text-xs text-slate-400">poin</p>
+              </div>
+
+              {/* Role badge */}
+              <span className={cn(
+                'text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0',
+                user.role === 'ADMIN'
+                  ? 'bg-mandiri-100 text-mandiri-700'
+                  : 'bg-slate-100 text-slate-600'
+              )}>
+                {user.role}
+              </span>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => openEdit(user)}
+                  className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                  title="Edit"
+                >
+                  <Pencil size={13} />
+                </button>
+                <button
+                  onClick={() => handleDelete(user)}
+                  disabled={deleting === user.id}
+                  className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors disabled:opacity-40"
+                  title="Hapus"
+                >
+                  {deleting === user.id
+                    ? <div className="w-3 h-3 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
+                    : <Trash2 size={13} />
+                  }
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Default password hint */}
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <AlertTriangle size={13} className="text-amber-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-amber-700">
+          Password default semua akun sales: <code className="bg-amber-100 px-1 rounded font-mono">mandiri123</code>.
+          Minta setiap sales mengubah password setelah login pertama.
+        </p>
       </div>
     </div>
   )

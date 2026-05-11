@@ -295,12 +295,42 @@ async function main() {
   })
 
   const salesUsers = [
-    { username: 'sales01', name: 'Andi Pratama',    email: 'andi.pratama@bankmandiri.co.id',    branchCode: 'KC_KLANDASAN',     points: 450 },
-    { username: 'sales02', name: 'Budi Santoso',    email: 'budi.santoso@bankmandiri.co.id',    branchCode: 'KC_SUPRAPTO',      points: 320 },
-    { username: 'sales03', name: 'Citra Dewi',      email: 'citra.dewi@bankmandiri.co.id',      branchCode: 'KC_SUPERBLOCK',    points: 680 },
-    { username: 'sales04', name: 'Deni Kurniawan',  email: 'deni.kurniawan@bankmandiri.co.id',  branchCode: 'KC_AHMAD_YANI',    points: 210 },
-    { username: 'sales05', name: 'Eka Rahayu',      email: 'eka.rahayu@bankmandiri.co.id',      branchCode: 'KC_BALIKPAPAN_BARU', points: 390 },
-    { username: 'demo',    name: 'Demo Sales',      email: 'demo@bankmandiri.co.id',            branchCode: 'KC_SUPERBLOCK',    points: 150 },
+    // Balikpapan
+    { username: 'klandasan',       name: 'Sales KC Klandasan',           email: 'klandasan@bankmandiri.co.id',       branchCode: 'KC_KLANDASAN',          points: 0 },
+    { username: 'suprapto',        name: 'Sales KC Suprapto',            email: 'suprapto@bankmandiri.co.id',        branchCode: 'KC_SUPRAPTO',           points: 0 },
+    { username: 'ahmadyani',       name: 'Sales KC Ahmad Yani',          email: 'ahmadyani@bankmandiri.co.id',       branchCode: 'KC_AHMAD_YANI',         points: 0 },
+    { username: 'sudirman',        name: 'Sales KC Sudirman',            email: 'sudirman@bankmandiri.co.id',        branchCode: 'KC_SUDIRMAN',           points: 0 },
+    { username: 'balikpapanbaru',  name: 'Sales KC Balikpapan Baru',     email: 'balikpapanbaru@bankmandiri.co.id',  branchCode: 'KC_BALIKPAPAN_BARU',    points: 0 },
+    { username: 'karangjati',      name: 'Sales KC Karang Jati',         email: 'karangjati@bankmandiri.co.id',      branchCode: 'KC_KARANG_JATI',        points: 0 },
+    { username: 'batakan',         name: 'Sales KC Batakan',             email: 'batakan@bankmandiri.co.id',         branchCode: 'KC_BATAKAN',            points: 0 },
+    { username: 'telkomdivre',     name: 'Sales KC Telkom Divre VI',     email: 'telkomdivre@bankmandiri.co.id',     branchCode: 'KC_TELKOM_DIVRE',       points: 0 },
+    { username: 'muararapak',      name: 'Sales KC Muara Rapak',         email: 'muararapak@bankmandiri.co.id',      branchCode: 'KC_MUARA_RAPAK',        points: 0 },
+    { username: 'superblock',      name: 'Sales KC Superblock',          email: 'superblock@bankmandiri.co.id',      branchCode: 'KC_SUPERBLOCK',         points: 0 },
+    { username: 'soekarnohatta',   name: 'Sales KC Soekarno Hatta',      email: 'soekarnohatta@bankmandiri.co.id',   branchCode: 'KC_SOEKARNO_HATTA',     points: 0 },
+    { username: 'sepaku',          name: 'Sales KC Sepaku',              email: 'sepaku@bankmandiri.co.id',          branchCode: 'KC_SEPAKU',             points: 0 },
+    // Paser
+    { username: 'tanahgrogot',     name: 'Sales KC Tanah Grogot',        email: 'tanahgrogot@bankmandiri.co.id',     branchCode: 'KC_TANAH_GROGOT',       points: 0 },
+    { username: 'batukajang',      name: 'Sales KC Batu Kajang',         email: 'batukajang@bankmandiri.co.id',      branchCode: 'KC_BATU_KAJANG',        points: 0 },
+    { username: 'simpangpait',     name: 'Sales KC Simpang Pait',        email: 'simpangpait@bankmandiri.co.id',     branchCode: 'KC_SIMPANG_PAIT',       points: 0 },
+    { username: 'pasekuaro',       name: 'Sales KC Pase Kuaro',          email: 'pasekuaro@bankmandiri.co.id',       branchCode: 'KC_PASE_KUARO',         points: 0 },
+    // PPU
+    { username: 'penajampaser',    name: 'Sales KC Penajem Paser Utara', email: 'penajampaser@bankmandiri.co.id',    branchCode: 'KC_PENAJEM_PASER',      points: 0 },
+    { username: 'babuludarat',     name: 'Sales KC Babulu Darat',        email: 'babuludarat@bankmandiri.co.id',     branchCode: 'KC_BABULU_DARAT',       points: 0 },
+    // Berau
+    { username: 'tanjungredeb',    name: 'Sales KC Tanjung Redeb',       email: 'tanjungredeb@bankmandiri.co.id',    branchCode: 'KC_TANJUNG_REDEB',      points: 0 },
+    // Tarakan
+    { username: 'tarakanyos',      name: 'Sales KC Tarakan Yos Sudarso', email: 'tarakanyos@bankmandiri.co.id',      branchCode: 'KC_TARAKAN_YOS',        points: 0 },
+    { username: 'tarakansimpang',  name: 'Sales KC Tarakan Simpang Tiga',email: 'tarakansimpang@bankmandiri.co.id',  branchCode: 'KC_TARAKAN_SIMPANG',    points: 0 },
+    // Nunukan & Sebatik
+    { username: 'nunukan',         name: 'Sales KC Nunukan',             email: 'nunukan@bankmandiri.co.id',         branchCode: 'KC_NUNUKAN',            points: 0 },
+    { username: 'pulausebatik',    name: 'Sales KC Pulau Sebatik',       email: 'pulausebatik@bankmandiri.co.id',    branchCode: 'KC_PULAU_SEBATIK',      points: 0 },
+    // Bunyu
+    { username: 'pulaubunyu',      name: 'Sales KC Pulau Bunyu',         email: 'pulaubunyu@bankmandiri.co.id',      branchCode: 'KC_PULAU_BUNYU',        points: 0 },
+    // Tanjung Selor & Senkawit
+    { username: 'tanjungselor',    name: 'Sales KC Tanjung Selor',       email: 'tanjungselor@bankmandiri.co.id',    branchCode: 'KC_TANJUNG_SELOR',      points: 0 },
+    { username: 'tanjselsenkawit', name: 'Sales KC Tanjsel Senkawit',    email: 'tanjselsenkawit@bankmandiri.co.id', branchCode: 'KC_TANJSEL_SENKAWIT',   points: 0 },
+    // Malinau
+    { username: 'malinau',         name: 'Sales KC Malinau',             email: 'malinau@bankmandiri.co.id',         branchCode: 'KC_MALINAU',            points: 0 },
   ]
 
   for (const u of salesUsers) {
@@ -323,9 +353,10 @@ async function main() {
 
   console.log('\n✅ Database seeded successfully!')
   console.log('\n📋 Login Credentials:')
-  console.log('   Admin  → username: admin    | password: admin2024')
-  console.log('   Sales  → username: demo     | password: mandiri123')
-  console.log('   Sales  → username: sales01  | password: mandiri123')
+  console.log('   Admin  → username: admin          | password: admin2024')
+  console.log('   Sales  → username: klandasan       | password: mandiri123')
+  console.log('   Sales  → username: suprapto        | password: mandiri123')
+  console.log('   (27 branch accounts, semua password: mandiri123)')
 }
 
 main()
