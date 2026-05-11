@@ -121,7 +121,7 @@ export default function SelectBranchPage() {
           
           <div className="relative z-10 flex flex-col items-end">
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut({ callbackUrl: 'https://portal-balikpapan.vercel.app' })}
               className="text-white/80 hover:text-white p-1 mb-2 transition-colors"
               title="Keluar"
             >

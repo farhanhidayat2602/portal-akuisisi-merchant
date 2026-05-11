@@ -134,7 +134,7 @@ export default function MerchantDetailPage({ params }: { params: { id: string } 
       if (!res.ok) {
         if (data.error === 'SESSION_STALE') {
           toast.error('Sesi sudah tidak valid. Silakan logout dan login kembali.', { duration: 6000 })
-          setTimeout(() => signOut({ callbackUrl: '/' }), 2000)
+          setTimeout(() => signOut({ callbackUrl: 'https://portal-balikpapan.vercel.app' }), 2000)
         } else if (data.error === 'ALREADY_LOCKED') {
           toast.error(`❌ ${data.message}`, { duration: 5000 })
         } else {

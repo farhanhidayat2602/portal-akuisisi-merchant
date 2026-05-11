@@ -46,7 +46,7 @@ export function Navbar({ title, showBack, backHref, branchName, subtitle }: Navb
           <div className="flex items-center gap-1">
             <span className="text-xs text-mandiri-200 hidden sm:block">{session?.user?.name}</span>
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut({ callbackUrl: 'https://portal-balikpapan.vercel.app' })}
               className="p-2 rounded-lg hover:bg-mandiri-600 transition-colors"
               title="Logout"
             >
