@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 72" fill="none">
+  <!-- Ombak / Wave mark (golden ribbon) -->
+  <path d="M80,20
+           C89,3 104,3 113,20
+           C122,37 137,37 146,20
+           C155,3 170,3 179,20
+           L179,28
+           C170,11 155,11 146,28
+           C137,45 122,45 113,28
+           C104,11 89,11 80,28
+           Z"
+        fill="#F5A623"/>
+  <!-- mandiri wordmark -->
+  <text x="1" y="65"
+        fill="white"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="31"
+        font-weight="700"
+        letter-spacing="-0.4">mandiri</text>
+</svg>

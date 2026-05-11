@@ -14,27 +14,17 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const session = await requireAdmin()
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await req.json()
-  const { name, email, role, branchId, password } = body
-
-  const data: any = {}
-  if (name)     data.name     = name
-  if (email)    data.email    = email
-  if (role)     data.role     = role
-  data.branchId = branchId || null
-  if (password) data.password = await bcrypt.hash(password, 10)
-
-  // Prevent demoting yourself
-  if (params.id === session.user.id && role === 'SALES') {
-    return NextResponse.json({ error: 'Tidak bisa mengubah role diri sendiri' }, { status: 400 })
+  const { password } = await req.json()
+  if (!password?.trim()) {
+    return NextResponse.json({ error: 'Password baru wajib diisi' }, { status: 400 })
   }
 
   const user = await prisma.user.update({
     where: { id: params.id },
-    data,
+    data:  { password: await bcrypt.hash(password, 10) },
     select: {
-      id: true, username: true, name: true, email: true,
-      role: true, points: true, branchId: true,
+      id: true, username: true, name: true,
+      role: true, points: true,
       branch: { select: { id: true, name: true, city: true } },
       createdAt: true,
     },

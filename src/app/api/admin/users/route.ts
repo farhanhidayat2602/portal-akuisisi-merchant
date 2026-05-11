@@ -15,10 +15,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
   const users = await prisma.user.findMany({
-    orderBy: [{ role: 'asc' }, { name: 'asc' }],
+    orderBy: [{ role: 'asc' }, { username: 'asc' }],
     select: {
-      id: true, username: true, name: true, email: true,
-      role: true, points: true, branchId: true,
+      id: true, username: true, name: true,
+      role: true, points: true,
       branch: { select: { id: true, name: true, city: true } },
       createdAt: true,
     },
@@ -30,34 +30,27 @@ export async function POST(req: Request) {
   if (!await requireAdmin()) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-  const body = await req.json()
-  const { username, name, email, password, role, branchId } = body
+  const { username, password } = await req.json()
 
-  if (!username || !name || !email || !password) {
-    return NextResponse.json({ error: 'Field username, name, email, password wajib diisi' }, { status: 400 })
+  if (!username?.trim() || !password?.trim()) {
+    return NextResponse.json({ error: 'Username dan password wajib diisi' }, { status: 400 })
   }
 
-  const exists = await prisma.user.findFirst({
-    where: { OR: [{ username }, { email }] },
-  })
+  const exists = await prisma.user.findUnique({ where: { username } })
   if (exists) {
-    return NextResponse.json({ error: 'Username atau email sudah digunakan' }, { status: 409 })
+    return NextResponse.json({ error: 'Username sudah digunakan' }, { status: 409 })
   }
+
+  // Auto-derive name and email from username
+  const name  = username.replace(/_/g, ' ')
+  const email = `${username.toLowerCase()}@bankmandiri.co.id`
 
   const hashed = await bcrypt.hash(password, 10)
   const user = await prisma.user.create({
-    data: {
-      username,
-      name,
-      email,
-      password: hashed,
-      role: role ?? 'SALES',
-      branchId: branchId || null,
-      points: 0,
-    },
+    data: { username, name, email, password: hashed, role: 'SALES', points: 0 },
     select: {
-      id: true, username: true, name: true, email: true,
-      role: true, points: true, branchId: true,
+      id: true, username: true, name: true,
+      role: true, points: true,
       branch: { select: { id: true, name: true, city: true } },
       createdAt: true,
     },

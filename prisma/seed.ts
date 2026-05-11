@@ -294,69 +294,77 @@ async function main() {
     },
   })
 
-  const salesUsers = [
+  // Hapus akun sales lama (non-BFT format) sebelum membuat yang baru
+  await prisma.user.deleteMany({
+    where: { role: 'SALES', username: { not: { startsWith: 'BFT_' } } },
+  })
+  console.log('  🧹 Akun sales lama dihapus')
+
+  // username → [branchCode, namaAsli]
+  const salesUsers: [string, string, string][] = [
     // Balikpapan
-    { username: 'klandasan',       name: 'Sales KC Klandasan',           email: 'klandasan@bankmandiri.co.id',       branchCode: 'KC_KLANDASAN',          points: 0 },
-    { username: 'suprapto',        name: 'Sales KC Suprapto',            email: 'suprapto@bankmandiri.co.id',        branchCode: 'KC_SUPRAPTO',           points: 0 },
-    { username: 'ahmadyani',       name: 'Sales KC Ahmad Yani',          email: 'ahmadyani@bankmandiri.co.id',       branchCode: 'KC_AHMAD_YANI',         points: 0 },
-    { username: 'sudirman',        name: 'Sales KC Sudirman',            email: 'sudirman@bankmandiri.co.id',        branchCode: 'KC_SUDIRMAN',           points: 0 },
-    { username: 'balikpapanbaru',  name: 'Sales KC Balikpapan Baru',     email: 'balikpapanbaru@bankmandiri.co.id',  branchCode: 'KC_BALIKPAPAN_BARU',    points: 0 },
-    { username: 'karangjati',      name: 'Sales KC Karang Jati',         email: 'karangjati@bankmandiri.co.id',      branchCode: 'KC_KARANG_JATI',        points: 0 },
-    { username: 'batakan',         name: 'Sales KC Batakan',             email: 'batakan@bankmandiri.co.id',         branchCode: 'KC_BATAKAN',            points: 0 },
-    { username: 'telkomdivre',     name: 'Sales KC Telkom Divre VI',     email: 'telkomdivre@bankmandiri.co.id',     branchCode: 'KC_TELKOM_DIVRE',       points: 0 },
-    { username: 'muararapak',      name: 'Sales KC Muara Rapak',         email: 'muararapak@bankmandiri.co.id',      branchCode: 'KC_MUARA_RAPAK',        points: 0 },
-    { username: 'superblock',      name: 'Sales KC Superblock',          email: 'superblock@bankmandiri.co.id',      branchCode: 'KC_SUPERBLOCK',         points: 0 },
-    { username: 'soekarnohatta',   name: 'Sales KC Soekarno Hatta',      email: 'soekarnohatta@bankmandiri.co.id',   branchCode: 'KC_SOEKARNO_HATTA',     points: 0 },
-    { username: 'sepaku',          name: 'Sales KC Sepaku',              email: 'sepaku@bankmandiri.co.id',          branchCode: 'KC_SEPAKU',             points: 0 },
+    ['BFT_Klandasan',       'Klandasan',       'KC_KLANDASAN'],
+    ['BFT_Suprapto',        'Suprapto',        'KC_SUPRAPTO'],
+    ['BFT_AhmadYani',       'AhmadYani',       'KC_AHMAD_YANI'],
+    ['BFT_Sudirman',        'Sudirman',        'KC_SUDIRMAN'],
+    ['BFT_BalikpapanBaru',  'BalikpapanBaru',  'KC_BALIKPAPAN_BARU'],
+    ['BFT_KarangJati',      'KarangJati',      'KC_KARANG_JATI'],
+    ['BFT_Batakan',         'Batakan',         'KC_BATAKAN'],
+    ['BFT_TelkomDivre',     'TelkomDivre',     'KC_TELKOM_DIVRE'],
+    ['BFT_MuaraRapak',      'MuaraRapak',      'KC_MUARA_RAPAK'],
+    ['BFT_Superblock',      'Superblock',      'KC_SUPERBLOCK'],
+    ['BFT_SoekarnoHatta',   'SoekarnoHatta',   'KC_SOEKARNO_HATTA'],
+    ['BFT_Sepaku',          'Sepaku',          'KC_SEPAKU'],
     // Paser
-    { username: 'tanahgrogot',     name: 'Sales KC Tanah Grogot',        email: 'tanahgrogot@bankmandiri.co.id',     branchCode: 'KC_TANAH_GROGOT',       points: 0 },
-    { username: 'batukajang',      name: 'Sales KC Batu Kajang',         email: 'batukajang@bankmandiri.co.id',      branchCode: 'KC_BATU_KAJANG',        points: 0 },
-    { username: 'simpangpait',     name: 'Sales KC Simpang Pait',        email: 'simpangpait@bankmandiri.co.id',     branchCode: 'KC_SIMPANG_PAIT',       points: 0 },
-    { username: 'pasekuaro',       name: 'Sales KC Pase Kuaro',          email: 'pasekuaro@bankmandiri.co.id',       branchCode: 'KC_PASE_KUARO',         points: 0 },
+    ['BFT_TanahGrogot',     'TanahGrogot',     'KC_TANAH_GROGOT'],
+    ['BFT_BatuKajang',      'BatuKajang',      'KC_BATU_KAJANG'],
+    ['BFT_SimpangPait',     'SimpangPait',     'KC_SIMPANG_PAIT'],
+    ['BFT_PaseKuaro',       'PaseKuaro',       'KC_PASE_KUARO'],
     // PPU
-    { username: 'penajampaser',    name: 'Sales KC Penajem Paser Utara', email: 'penajampaser@bankmandiri.co.id',    branchCode: 'KC_PENAJEM_PASER',      points: 0 },
-    { username: 'babuludarat',     name: 'Sales KC Babulu Darat',        email: 'babuludarat@bankmandiri.co.id',     branchCode: 'KC_BABULU_DARAT',       points: 0 },
+    ['BFT_PenajeimPaser',   'PenajeimPaser',   'KC_PENAJEM_PASER'],
+    ['BFT_BabuluDarat',     'BabuluDarat',     'KC_BABULU_DARAT'],
     // Berau
-    { username: 'tanjungredeb',    name: 'Sales KC Tanjung Redeb',       email: 'tanjungredeb@bankmandiri.co.id',    branchCode: 'KC_TANJUNG_REDEB',      points: 0 },
+    ['BFT_TanjungRedeb',    'TanjungRedeb',    'KC_TANJUNG_REDEB'],
     // Tarakan
-    { username: 'tarakanyos',      name: 'Sales KC Tarakan Yos Sudarso', email: 'tarakanyos@bankmandiri.co.id',      branchCode: 'KC_TARAKAN_YOS',        points: 0 },
-    { username: 'tarakansimpang',  name: 'Sales KC Tarakan Simpang Tiga',email: 'tarakansimpang@bankmandiri.co.id',  branchCode: 'KC_TARAKAN_SIMPANG',    points: 0 },
+    ['BFT_TarakanYos',      'TarakanYos',      'KC_TARAKAN_YOS'],
+    ['BFT_TarakanSimpang',  'TarakanSimpang',  'KC_TARAKAN_SIMPANG'],
     // Nunukan & Sebatik
-    { username: 'nunukan',         name: 'Sales KC Nunukan',             email: 'nunukan@bankmandiri.co.id',         branchCode: 'KC_NUNUKAN',            points: 0 },
-    { username: 'pulausebatik',    name: 'Sales KC Pulau Sebatik',       email: 'pulausebatik@bankmandiri.co.id',    branchCode: 'KC_PULAU_SEBATIK',      points: 0 },
+    ['BFT_Nunukan',         'Nunukan',         'KC_NUNUKAN'],
+    ['BFT_PulauSebatik',    'PulauSebatik',    'KC_PULAU_SEBATIK'],
     // Bunyu
-    { username: 'pulaubunyu',      name: 'Sales KC Pulau Bunyu',         email: 'pulaubunyu@bankmandiri.co.id',      branchCode: 'KC_PULAU_BUNYU',        points: 0 },
+    ['BFT_PulauBunyu',      'PulauBunyu',      'KC_PULAU_BUNYU'],
     // Tanjung Selor & Senkawit
-    { username: 'tanjungselor',    name: 'Sales KC Tanjung Selor',       email: 'tanjungselor@bankmandiri.co.id',    branchCode: 'KC_TANJUNG_SELOR',      points: 0 },
-    { username: 'tanjselsenkawit', name: 'Sales KC Tanjsel Senkawit',    email: 'tanjselsenkawit@bankmandiri.co.id', branchCode: 'KC_TANJSEL_SENKAWIT',   points: 0 },
+    ['BFT_TanjungSelor',    'TanjungSelor',    'KC_TANJUNG_SELOR'],
+    ['BFT_TanjselSenkawit', 'TanjselSenkawit', 'KC_TANJSEL_SENKAWIT'],
     // Malinau
-    { username: 'malinau',         name: 'Sales KC Malinau',             email: 'malinau@bankmandiri.co.id',         branchCode: 'KC_MALINAU',            points: 0 },
+    ['BFT_Malinau',         'Malinau',         'KC_MALINAU'],
   ]
 
-  for (const u of salesUsers) {
-    const branchId = branchMap[u.branchCode]
+  for (const [username, namePart, branchCode] of salesUsers) {
+    const pw       = await bcrypt.hash(`${namePart}123`, 10)
+    const branchId = branchMap[branchCode]
     await prisma.user.upsert({
-      where: { username: u.username },
+      where:  { username },
       update: {},
       create: {
-        username: u.username,
-        name: u.name,
-        email: u.email,
-        password: hashedPassword,
-        role: 'SALES',
-        points: u.points,
+        username,
+        name:     username.replace(/_/g, ' '),
+        email:    `${username.toLowerCase()}@bankmandiri.co.id`,
+        password: pw,
+        role:     'SALES',
+        points:   0,
         branchId,
       },
     })
-    console.log(`  ✓ User: ${u.name}`)
+    console.log(`  ✓ ${username}  |  pw: ${namePart}123`)
   }
 
   console.log('\n✅ Database seeded successfully!')
   console.log('\n📋 Login Credentials:')
-  console.log('   Admin  → username: admin          | password: admin2024')
-  console.log('   Sales  → username: klandasan       | password: mandiri123')
-  console.log('   Sales  → username: suprapto        | password: mandiri123')
-  console.log('   (27 branch accounts, semua password: mandiri123)')
+  console.log('   Admin → username: admin            | password: admin2024')
+  console.log('   Sales → username: BFT_Klandasan    | password: Klandasan123')
+  console.log('   Sales → username: BFT_Suprapto     | password: Suprapto123')
+  console.log('   (27 akun cabang, format password: NamaCabang123)')
 }
 
 main()
