@@ -1199,12 +1199,12 @@ function UserManagement() {
               <label className="label text-xs">Username</label>
               <input
                 className="input text-sm"
-                placeholder="cth: BFT_Klandasan"
+                placeholder="cth: bft_klandasan"
                 value={newUsername}
                 onChange={e => setNewUsername(e.target.value)}
                 required autoFocus
               />
-              <p className="text-[10px] text-slate-400 mt-0.5">Format: BFT_NamaCabang</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Format: bft_namacabang</p>
             </div>
             <div>
               <label className="label text-xs">Password</label>
@@ -1326,7 +1326,7 @@ function UserManagement() {
       <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
         <AlertTriangle size={13} className="text-amber-600 mt-0.5 shrink-0" />
         <p className="text-xs text-amber-700">
-          Format username: <code className="bg-amber-100 px-1 rounded font-mono">BFT_NamaCabang</code> &nbsp;·&nbsp;
+          Format username: <code className="bg-amber-100 px-1 rounded font-mono">bft_namacabang</code> &nbsp;·&nbsp;
           Password default: <code className="bg-amber-100 px-1 rounded font-mono">NamaCabang123</code>
         </p>
       </div>

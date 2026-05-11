@@ -296,62 +296,58 @@ async function main() {
     },
   })
 
-  // Hapus akun sales lama (non-BFT format) sebelum membuat yang baru
-  await prisma.user.deleteMany({
-    where: { role: 'SALES', username: { not: { startsWith: 'BFT_' } } },
-  })
+  // Hapus semua akun sales lama sebelum membuat yang baru
+  await prisma.user.deleteMany({ where: { role: 'SALES' } })
   console.log('  🧹 Akun sales lama dihapus')
 
-  // username → [branchCode, namaAsli]
+  // username → [branchCode, namaAsli (untuk password)]
   const salesUsers: [string, string, string][] = [
     // Balikpapan
-    ['BFT_Klandasan',       'Klandasan',       'KC_KLANDASAN'],
-    ['BFT_Suprapto',        'Suprapto',        'KC_SUPRAPTO'],
-    ['BFT_AhmadYani',       'AhmadYani',       'KC_AHMAD_YANI'],
-    ['BFT_Sudirman',        'Sudirman',        'KC_SUDIRMAN'],
-    ['BFT_BalikpapanBaru',  'BalikpapanBaru',  'KC_BALIKPAPAN_BARU'],
-    ['BFT_KarangJati',      'KarangJati',      'KC_KARANG_JATI'],
-    ['BFT_Batakan',         'Batakan',         'KC_BATAKAN'],
-    ['BFT_TelkomDivre',     'TelkomDivre',     'KC_TELKOM_DIVRE'],
-    ['BFT_MuaraRapak',      'MuaraRapak',      'KC_MUARA_RAPAK'],
-    ['BFT_Superblock',      'Superblock',      'KC_SUPERBLOCK'],
-    ['BFT_SoekarnoHatta',   'SoekarnoHatta',   'KC_SOEKARNO_HATTA'],
-    ['BFT_Sepaku',          'Sepaku',          'KC_SEPAKU'],
+    ['bft_klandasan',       'Klandasan',       'KC_KLANDASAN'],
+    ['bft_suprapto',        'Suprapto',        'KC_SUPRAPTO'],
+    ['bft_ahmadyani',       'AhmadYani',       'KC_AHMAD_YANI'],
+    ['bft_sudirman',        'Sudirman',        'KC_SUDIRMAN'],
+    ['bft_balikpapanbaru',  'BalikpapanBaru',  'KC_BALIKPAPAN_BARU'],
+    ['bft_karangjati',      'KarangJati',      'KC_KARANG_JATI'],
+    ['bft_batakan',         'Batakan',         'KC_BATAKAN'],
+    ['bft_telkomdivre',     'TelkomDivre',     'KC_TELKOM_DIVRE'],
+    ['bft_muararapak',      'MuaraRapak',      'KC_MUARA_RAPAK'],
+    ['bft_superblock',      'Superblock',      'KC_SUPERBLOCK'],
+    ['bft_soekarnohatta',   'SoekarnoHatta',   'KC_SOEKARNO_HATTA'],
+    ['bft_sepaku',          'Sepaku',          'KC_SEPAKU'],
     // Paser
-    ['BFT_TanahGrogot',     'TanahGrogot',     'KC_TANAH_GROGOT'],
-    ['BFT_BatuKajang',      'BatuKajang',      'KC_BATU_KAJANG'],
-    ['BFT_SimpangPait',     'SimpangPait',     'KC_SIMPANG_PAIT'],
-    ['BFT_PaseKuaro',       'PaseKuaro',       'KC_PASE_KUARO'],
+    ['bft_tanahgrogot',     'TanahGrogot',     'KC_TANAH_GROGOT'],
+    ['bft_batukajang',      'BatuKajang',      'KC_BATU_KAJANG'],
+    ['bft_simpangpait',     'SimpangPait',     'KC_SIMPANG_PAIT'],
+    ['bft_pasekuaro',       'PaseKuaro',       'KC_PASE_KUARO'],
     // PPU
-    ['BFT_PenajeimPaser',   'PenajeimPaser',   'KC_PENAJEM_PASER'],
-    ['BFT_BabuluDarat',     'BabuluDarat',     'KC_BABULU_DARAT'],
+    ['bft_penajeimpaser',   'PenajeimPaser',   'KC_PENAJEM_PASER'],
+    ['bft_babuludarat',     'BabuluDarat',     'KC_BABULU_DARAT'],
     // Berau
-    ['BFT_TanjungRedeb',    'TanjungRedeb',    'KC_TANJUNG_REDEB'],
+    ['bft_tanjungredeb',    'TanjungRedeb',    'KC_TANJUNG_REDEB'],
     // Tarakan
-    ['BFT_TarakanYos',      'TarakanYos',      'KC_TARAKAN_YOS'],
-    ['BFT_TarakanSimpang',  'TarakanSimpang',  'KC_TARAKAN_SIMPANG'],
+    ['bft_tarakanyos',      'TarakanYos',      'KC_TARAKAN_YOS'],
+    ['bft_tarakansimpang',  'TarakanSimpang',  'KC_TARAKAN_SIMPANG'],
     // Nunukan & Sebatik
-    ['BFT_Nunukan',         'Nunukan',         'KC_NUNUKAN'],
-    ['BFT_PulauSebatik',    'PulauSebatik',    'KC_PULAU_SEBATIK'],
+    ['bft_nunukan',         'Nunukan',         'KC_NUNUKAN'],
+    ['bft_pulausebatik',    'PulauSebatik',    'KC_PULAU_SEBATIK'],
     // Bunyu
-    ['BFT_PulauBunyu',      'PulauBunyu',      'KC_PULAU_BUNYU'],
+    ['bft_pulaubunyu',      'PulauBunyu',      'KC_PULAU_BUNYU'],
     // Tanjung Selor & Senkawit
-    ['BFT_TanjungSelor',    'TanjungSelor',    'KC_TANJUNG_SELOR'],
-    ['BFT_TanjselSenkawit', 'TanjselSenkawit', 'KC_TANJSEL_SENKAWIT'],
+    ['bft_tanjungselor',    'TanjungSelor',    'KC_TANJUNG_SELOR'],
+    ['bft_tanjselsenkawit', 'TanjselSenkawit', 'KC_TANJSEL_SENKAWIT'],
     // Malinau
-    ['BFT_Malinau',         'Malinau',         'KC_MALINAU'],
+    ['bft_malinau',         'Malinau',         'KC_MALINAU'],
   ]
 
   for (const [username, namePart, branchCode] of salesUsers) {
     const pw       = await bcrypt.hash(`${namePart}123`, 10)
     const branchId = branchMap[branchCode]
-    await prisma.user.upsert({
-      where:  { username },
-      update: {},
-      create: {
+    await prisma.user.create({
+      data: {
         username,
         name:     username.replace(/_/g, ' '),
-        email:    `${username.toLowerCase()}@bankmandiri.co.id`,
+        email:    `${username}@bankmandiri.co.id`,
         password: pw,
         role:     'SALES',
         points:   0,
