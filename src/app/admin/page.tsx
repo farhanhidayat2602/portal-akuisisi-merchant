@@ -1210,7 +1210,7 @@ function UserManagement() {
               <label className="label text-xs">Password</label>
               <input
                 type="password" className="input text-sm"
-                placeholder="cth: Klandasan123"
+                placeholder="cth: klandasan123"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 required
@@ -1327,7 +1327,7 @@ function UserManagement() {
         <AlertTriangle size={13} className="text-amber-600 mt-0.5 shrink-0" />
         <p className="text-xs text-amber-700">
           Format username: <code className="bg-amber-100 px-1 rounded font-mono">bft_namacabang</code> &nbsp;·&nbsp;
-          Password default: <code className="bg-amber-100 px-1 rounded font-mono">NamaCabang123</code>
+          Password default: <code className="bg-amber-100 px-1 rounded font-mono">namacabang123</code>
         </p>
       </div>
     </div>

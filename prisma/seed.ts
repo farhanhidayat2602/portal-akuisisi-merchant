@@ -341,7 +341,7 @@ async function main() {
   ]
 
   for (const [username, namePart, branchCode] of salesUsers) {
-    const pw       = await bcrypt.hash(`${namePart}123`, 10)
+    const pw       = await bcrypt.hash(`${namePart.toLowerCase()}123`, 10)
     const branchId = branchMap[branchCode]
     await prisma.user.create({
       data: {
@@ -354,7 +354,7 @@ async function main() {
         branchId,
       },
     })
-    console.log(`  ✓ ${username}  |  pw: ${namePart}123`)
+    console.log(`  ✓ ${username}  |  pw: ${namePart.toLowerCase()}123`)
   }
 
   console.log('\n✅ Database seeded successfully!')
