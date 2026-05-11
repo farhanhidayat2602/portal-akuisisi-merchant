@@ -761,7 +761,7 @@ function NegotiationContent() {
                     <CheckCircle2 size={15} /> Lanjutkan Proses Akuisisi <ArrowRight size={13} />
                   </button>
                   <button onClick={goBack}
-                    className="w-full bg-white border border-[#003B79] text-[#003B79] text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
+                    className="w-full bg-white border border-[#003B79] text-[#003B79] rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
                   >
                     <Clock size={14} /> Jadwalkan Follow Up
                   </button>
