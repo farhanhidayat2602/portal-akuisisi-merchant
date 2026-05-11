@@ -193,18 +193,6 @@ export default function LoginPage() {
           </div>
         </div>
         
-        {/* Demo Login Information - styled to be subtle outside the card */}
-        <div className="mt-6 p-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl text-xs text-blue-100 space-y-1.5 opacity-80 hover:opacity-100 transition-opacity">
-          <p className="font-semibold text-white/90">Akun Demo:</p>
-          <p className="flex justify-between items-center">
-            <span>Sales</span> 
-            <span className="font-mono bg-[#001935]/40 px-2 py-1 rounded text-white/90 border border-white/10">demo / mandiri123</span>
-          </p>
-          <p className="flex justify-between items-center">
-            <span>Admin</span> 
-            <span className="font-mono bg-[#001935]/40 px-2 py-1 rounded text-white/90 border border-white/10">admin / admin2024</span>
-          </p>
-        </div>
       </div>
     </div>
   )
