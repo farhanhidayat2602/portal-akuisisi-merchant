@@ -182,8 +182,8 @@ export default function SelectBranchPage() {
               <Layers size={20} className="text-emerald-600" />
             </div>
             <div className="flex-1 text-left">
-              <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Kalkulator Multi-EDC</p>
-              <p className="text-slate-400 text-[12px] font-medium">Simulasi penghematan 2 EDC vs 1 EDC</p>
+              <p className="text-[#002A57] font-bold text-[15px] mb-0.5">EDC Cost Comparison</p>
+              <p className="text-slate-400 text-[12px] font-medium">Bandingkan biaya 2–4 mesin EDC sekaligus</p>
             </div>
             <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
               <ChevronRight size={14} />
