@@ -41,8 +41,8 @@ const THEMES = [
 ]
 
 const DEFAULTS: EdcConfig[] = [
-  { id: '1', bank: 'mandiri', porsi: 40, qrisPct: 30, onUsPct: 70, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.15', mdrDebitOffUs: '1.00', mdrKreditOnUs: '1.80', mdrKreditOffUs: '2.00' },
-  { id: '2', bank: 'bca',     porsi: 30, qrisPct: 30, onUsPct: 60, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.40', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
+  { id: '1', bank: 'mandiri', porsi: 40, qrisPct: 30, onUsPct: 70, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.15', mdrDebitOffUs: '1.00', mdrKreditOnUs: '1.80', mdrKreditOffUs: '1.80' },
+  { id: '2', bank: 'bca',     porsi: 30, qrisPct: 30, onUsPct: 60, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.15', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
   { id: '3', bank: 'bri',     porsi: 20, qrisPct: 30, onUsPct: 50, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.45', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
   { id: '4', bank: 'bni',     porsi: 10, qrisPct: 30, onUsPct: 40, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.50', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
 ]
