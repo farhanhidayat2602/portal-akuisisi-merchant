@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Building2, MapPin, ChevronRight, Search, LogOut,
   Calculator, Trophy, Store, TrendingUp, Shield, PiggyBank,
-  Calendar, User
+  Calendar, User, Layers
 } from 'lucide-react'
 import { Branch } from '@/types'
 import { format } from 'date-fns'
@@ -167,6 +167,23 @@ export default function SelectBranchPage() {
             <div className="flex-1 text-left">
               <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Simulasi Hemat</p>
               <p className="text-slate-400 text-[12px] font-medium">Negosiasi vs bank lain</p>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
+              <ChevronRight size={14} />
+            </div>
+          </button>
+
+          {/* Multi EDC */}
+          <button
+            onClick={() => router.push('/multi-edc')}
+            className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all active:scale-[0.98] border border-slate-100 md:col-span-2"
+          >
+            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+              <Layers size={20} className="text-emerald-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[#002A57] font-bold text-[15px] mb-0.5">Kalkulator Multi-EDC</p>
+              <p className="text-slate-400 text-[12px] font-medium">Simulasi penghematan 2 EDC vs 1 EDC</p>
             </div>
             <div className="w-6 h-6 rounded-full bg-[#F4F7FB] flex items-center justify-center shrink-0 text-[#0064B4]">
               <ChevronRight size={14} />
