@@ -7,7 +7,7 @@ import { Navbar } from '@/components/Navbar'
 import {
   CreditCard, TrendingDown, PiggyBank, Calendar,
   ChevronDown, ChevronUp, ArrowRight, Info,
-  CheckCircle2, Layers, Users, Zap, FileText,
+  CheckCircle2, Layers, Users, Zap, FileText, Plus, X,
 } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import jsPDF from 'jspdf'
@@ -22,186 +22,172 @@ const BANKS = ['BCA', 'BRI', 'BNI', 'CIMB', 'BTN', 'Danamon', 'Lainnya']
 
 const THUMB = '[&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md'
 
+const COLORS = [
+  { bg: 'bg-red-500',    light: 'bg-red-50',    border: 'border-red-200',    text: 'text-red-600',    ring: 'focus:ring-red-200'    },
+  { bg: 'bg-orange-500', light: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600', ring: 'focus:ring-orange-200' },
+  { bg: 'bg-purple-500', light: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600', ring: 'focus:ring-purple-200' },
+  { bg: 'bg-pink-500',   light: 'bg-pink-50',   border: 'border-pink-200',   text: 'text-pink-600',   ring: 'focus:ring-pink-200'   },
+]
+
+type EdcEntry = {
+  id: string
+  bank: string
+  debitOnUs: string
+  debitOffUs: string
+  kreditOnUs: string
+  kreditOffUs: string
+  qrisRate: string
+  showRates: boolean
+}
+
+function makeEdc(): EdcEntry {
+  return {
+    id: Math.random().toString(36).slice(2),
+    bank: '',
+    debitOnUs: '1.00',
+    debitOffUs: '1.00',
+    kreditOnUs: '2.00',
+    kreditOffUs: '2.00',
+    qrisRate: '0.70',
+    showRates: false,
+  }
+}
+
 function MultiEDCContent() {
-  const router      = useRouter()
+  const router       = useRouter()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
-  const merchantId  = searchParams.get('merchantId')
+  const merchantId   = searchParams.get('merchantId')
 
-  // ── Inputs ────────────────────────────────────────────────────────────────
-  const [volume,          setVolume]          = useState('')
-  const [selectedBank,    setSelectedBank]    = useState('')
-  const [qrisPct,         setQrisPct]         = useState(30)
-  const [debitPct,        setDebitPct]        = useState(70)
-  const [mandiriNasabah,  setMandiriNasabah]  = useState(35)
+  const [edcs, setEdcs]               = useState<EdcEntry[]>([makeEdc()])
+  const [primaryIdx, setPrimaryIdx]   = useState(0)
 
-  // Existing bank rates
-  const [showExRates,     setShowExRates]     = useState(false)
-  const [exDebitOnUs,     setExDebitOnUs]     = useState('1.00')
-  const [exDebitOffUs,    setExDebitOffUs]    = useState('1.00')
-  const [exKreditOnUs,    setExKreditOnUs]    = useState('2.00')
-  const [exKreditOffUs,   setExKreditOffUs]   = useState('2.00')
-  const [exQrisRate,      setExQrisRate]      = useState('0.70')
-
-  // Mandiri rates
-  const [showMRates,      setShowMRates]      = useState(false)
-  const [mDebitOnUs,      setMDebitOnUs]      = useState('0.15')
-  const [mKreditOnUs,     setMKreditOnUs]     = useState('1.80')
+  const [volume,         setVolume]         = useState('')
+  const [qrisPct,        setQrisPct]        = useState(30)
+  const [debitPct,       setDebitPct]       = useState(70)
+  const [mandiriNasabah, setMandiriNasabah] = useState(35)
+  const [showMRates,     setShowMRates]     = useState(false)
+  const [mDebitOnUs,     setMDebitOnUs]     = useState('0.15')
+  const [mKreditOnUs,    setMKreditOnUs]    = useState('1.80')
 
   const vol = parseFloat(volume.replace(/\D/g, '')) || 0
 
-  // ── Calculations ──────────────────────────────────────────────────────────
+  const updateEdc = (idx: number, field: keyof EdcEntry, value: string | boolean) =>
+    setEdcs(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e))
+
+  const addEdc = () => {
+    if (edcs.length >= 4) return
+    setEdcs(prev => [...prev, makeEdc()])
+  }
+
+  const removeEdc = (idx: number) => {
+    if (edcs.length <= 1) return
+    setEdcs(prev => {
+      const next = prev.filter((_, i) => i !== idx)
+      if (primaryIdx >= next.length) setPrimaryIdx(next.length - 1)
+      else if (primaryIdx > idx) setPrimaryIdx(p => p - 1)
+      return next
+    })
+  }
+
   const calc = useMemo(() => {
     if (vol === 0) return null
+    const p = edcs[primaryIdx] ?? edcs[0]
 
-    const edcPct     = 100 - qrisPct
-    const kreditPct  = 100 - debitPct
+    const edcPct    = 100 - qrisPct
+    const kreditPct = 100 - debitPct
+    const qrisVol   = vol * qrisPct / 100
+    const edcVol    = vol * edcPct  / 100
+    const debitVol  = edcVol * debitPct  / 100
+    const kreditVol = edcVol * kreditPct / 100
 
-    const qrisVol    = vol * qrisPct  / 100
-    const edcVol     = vol * edcPct   / 100
-    const debitVol   = edcVol * debitPct  / 100
-    const kreditVol  = edcVol * kreditPct / 100
+    const mDVol  = debitVol  * mandiriNasabah / 100
+    const oDVol  = debitVol  * (100 - mandiriNasabah) / 100
+    const mKVol  = kreditVol * mandiriNasabah / 100
+    const oKVol  = kreditVol * (100 - mandiriNasabah) / 100
 
-    // Split by Mandiri cardholder %
-    const mDebitVol  = debitVol  * mandiriNasabah / 100
-    const oDebitVol  = debitVol  * (100 - mandiriNasabah) / 100
-    const mKreditVol = kreditVol * mandiriNasabah / 100
-    const oKreditVol = kreditVol * (100 - mandiriNasabah) / 100
+    const exDon  = parseFloat(p.debitOnUs)   / 100
+    const exDoff = parseFloat(p.debitOffUs)  / 100
+    const exKon  = parseFloat(p.kreditOnUs)  / 100
+    const exKoff = parseFloat(p.kreditOffUs) / 100
+    const exQr   = parseFloat(p.qrisRate)    / 100
+    const mDon   = parseFloat(mDebitOnUs)    / 100
+    const mKon   = parseFloat(mKreditOnUs)   / 100
 
-    const exDonUs  = parseFloat(exDebitOnUs)   / 100
-    const exDoffUs = parseFloat(exDebitOffUs)  / 100
-    const exKonUs  = parseFloat(exKreditOnUs)  / 100
-    const exKoffUs = parseFloat(exKreditOffUs) / 100
-    const exQr     = parseFloat(exQrisRate)    / 100
-    const mDonUs   = parseFloat(mDebitOnUs)    / 100
-    const mKonUs   = parseFloat(mKreditOnUs)   / 100
+    // Before: N EDC (Mandiri cardholders Off-Us at primary existing EDC)
+    const feeA = mDVol * exDoff + oDVol * exDon + mKVol * exKoff + oKVol * exKon + qrisVol * exQr
+    // After:  N+1 EDC (Mandiri cardholders On-Us at new Mandiri EDC)
+    const feeB = mDVol * mDon  + oDVol * exDon + mKVol * mKon  + oKVol * exKon + qrisVol * exQr
 
-    // Scenario 1 — 1 EDC (existing bank only)
-    // Mandiri cardholders → Off-Us on competitor EDC
-    // Non-Mandiri cardholders → On-Us on competitor EDC
-    const fee1 =
-      mDebitVol  * exDoffUs +
-      oDebitVol  * exDonUs  +
-      mKreditVol * exKoffUs +
-      oKreditVol * exKonUs  +
-      qrisVol    * exQr
-
-    // Scenario 2 — 2 EDC (existing + Mandiri)
-    // Mandiri cardholders → On-Us Mandiri EDC
-    // Non-Mandiri cardholders → On-Us competitor EDC
-    const fee2 =
-      mDebitVol  * mDonUs   +
-      oDebitVol  * exDonUs  +
-      mKreditVol * mKonUs   +
-      oKreditVol * exKonUs  +
-      qrisVol    * exQr
-
-    const savings      = fee1 - fee2
-    const savingsPct   = fee1 > 0 ? (savings / fee1) * 100 : 0
-
-    // Volume routed to each EDC (2 EDC scenario)
-    const volMandiriEDC  = (mDebitVol + mKreditVol)
-    const volExistingEDC = (oDebitVol + oKreditVol)
+    const savings    = feeA - feeB
+    const savingsPct = feeA > 0 ? (savings / feeA) * 100 : 0
 
     return {
-      vol, qrisVol, edcVol, debitVol, kreditVol,
-      mDebitVol, oDebitVol, mKreditVol, oKreditVol,
-      fee1, fee2, savings, savingsPct,
-      savings6m:   savings * 6,
-      savings1y:   savings * 12,
-      volMandiriEDC, volExistingEDC,
-      mandiriEDCFee: mDebitVol * mDonUs + mKreditVol * mKonUs,
-      existingEDCFee: oDebitVol * exDonUs + oKreditVol * exKonUs,
+      feeA, feeB, savings, savingsPct,
+      savings6m: savings * 6,
+      savings1y: savings * 12,
+      mVol: mDVol + mKVol,
+      oVol: oDVol + oKVol,
+      qrisVol,
+      mandiriFee:   mDVol * mDon  + mKVol * mKon,
+      existingFee:  oDVol * exDon + oKVol * exKon,
+      qrisFee:      qrisVol * exQr,
+      mMDRoff: exDoff, mMDRon: mDon,
+      primary: p,
+      mDVol, oDVol, mKVol, oKVol,
     }
-  }, [vol, qrisPct, debitPct, mandiriNasabah,
-      exDebitOnUs, exDebitOffUs, exKreditOnUs, exKreditOffUs, exQrisRate,
-      mDebitOnUs, mKreditOnUs])
+  }, [vol, qrisPct, debitPct, mandiriNasabah, edcs, primaryIdx, mDebitOnUs, mKreditOnUs])
 
-  function handleDownloadPDF() {
+  function handlePDF() {
     if (!calc) return
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
     const W = 210, m = 14, cW = W - m * 2
-
-    // Header
-    doc.setFillColor(0, 59, 121)
-    doc.rect(0, 0, W, 38, 'F')
-    doc.setFillColor(245, 166, 35)
-    doc.rect(0, 38, W, 3.5, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(15)
+    doc.setFillColor(0, 59, 121); doc.rect(0, 0, W, 38, 'F')
+    doc.setFillColor(245, 166, 35); doc.rect(0, 38, W, 3.5, 'F')
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15)
     doc.text('STRATEGI MULTI-EDC — PENGHEMATAN BIAYA', m, 13)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Bank Existing: ${selectedBank || 'Kompetitor'} + Mandiri EDC`, m, 21)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal')
+    const bankNames = edcs.map(e => e.bank || 'Existing').join(' + ')
+    doc.text(`EDC: ${bankNames} + Mandiri (total ${edcs.length + 1} EDC)`, m, 21)
     doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, m, 28)
     if (session?.user?.name) doc.text('RO: ' + session.user.name, W - m, 28, { align: 'right' })
 
     let y = 48
+    const fmt2 = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
 
-    // Volume box
-    doc.setFillColor(235, 243, 255)
-    doc.roundedRect(m, y, cW, 16, 3, 3, 'F')
-    doc.setTextColor(0, 59, 121)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.text('OMZET MERCHANT / BULAN', m + 4, y + 6)
-    doc.setFontSize(14)
-    doc.text(new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(vol), m + 4, y + 13)
-    y += 22
+    doc.setFillColor(235, 243, 255); doc.roundedRect(m, y, cW, 16, 3, 3, 'F')
+    doc.setTextColor(0, 59, 121); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
+    doc.text('OMZET MERCHANT / BULAN', m + 4, y + 6); doc.setFontSize(14)
+    doc.text(fmt2(vol), m + 4, y + 13); y += 22
 
-    // Comparison table
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9.5)
-    doc.setTextColor(20, 30, 50)
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20, 30, 50)
     doc.text('PERBANDINGAN BIAYA TRANSAKSI', m, y); y += 5
 
     const drawRow = (label: string, v1: string, v2: string, style: 'header' | 'normal' | 'total' = 'normal') => {
       const rH = 8, c2 = m + 95, c3 = m + 145
-      if (style === 'header') {
-        doc.setFillColor(0, 59, 121); doc.rect(m, y, cW, rH, 'F')
-        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
-      } else if (style === 'total') {
-        doc.setFillColor(219, 234, 254); doc.rect(m, y, cW, rH, 'F')
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(20, 30, 50)
-      } else {
-        doc.setFillColor(y % 16 < 8 ? 248 : 242, y % 16 < 8 ? 250 : 246, y % 16 < 8 ? 252 : 250)
-        doc.rect(m, y, cW, rH, 'F')
-        doc.setTextColor(40, 50, 70); doc.setFont('helvetica', 'normal'); doc.setFontSize(8)
-      }
-      doc.text(label, m + 3, y + 5.5)
-      doc.text(v1, c2 + 3, y + 5.5)
-      doc.text(v2, c3 + 3, y + 5.5)
-      doc.setDrawColor(200, 210, 225)
-      doc.rect(m, y, cW, rH)
-      doc.line(c2, y, c2, y + rH)
-      doc.line(c3, y, c3, y + rH)
+      if (style === 'header') { doc.setFillColor(0, 59, 121); doc.rect(m, y, cW, rH, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8) }
+      else if (style === 'total') { doc.setFillColor(219, 234, 254); doc.rect(m, y, cW, rH, 'F'); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(20, 30, 50) }
+      else { doc.setFillColor(y % 16 < 8 ? 248 : 242, y % 16 < 8 ? 250 : 246, y % 16 < 8 ? 252 : 250); doc.rect(m, y, cW, rH, 'F'); doc.setTextColor(40, 50, 70); doc.setFont('helvetica', 'normal'); doc.setFontSize(8) }
+      doc.text(label, m + 3, y + 5.5); doc.text(v1, c2 + 3, y + 5.5); doc.text(v2, c3 + 3, y + 5.5)
+      doc.setDrawColor(200, 210, 225); doc.rect(m, y, cW, rH); doc.line(c2, y, c2, y + rH); doc.line(c3, y, c3, y + rH)
       y += rH
     }
 
-    const fmt2 = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
-    drawRow('Komponen', `1 EDC (${selectedBank || 'Existing'})`, '2 EDC (+ Mandiri)', 'header')
-    drawRow(`QRIS (${qrisPct}%)`, fmt2(calc.qrisVol * parseFloat(exQrisRate) / 100), fmt2(calc.qrisVol * parseFloat(exQrisRate) / 100))
-    drawRow(`Nasabah Mandiri EDC (${mandiriNasabah}%)`, fmt2(calc.mDebitVol * parseFloat(exDebitOffUs) / 100 + calc.mKreditVol * parseFloat(exKreditOffUs) / 100), fmt2(calc.mandiriEDCFee))
-    drawRow(`Nasabah Non-Mandiri EDC (${100 - mandiriNasabah}%)`, fmt2(calc.oDebitVol * parseFloat(exDebitOnUs) / 100 + calc.oKreditVol * parseFloat(exKreditOnUs) / 100), fmt2(calc.existingEDCFee))
-    drawRow('TOTAL BIAYA / BULAN', fmt2(calc.fee1), fmt2(calc.fee2), 'total')
+    drawRow('Komponen', `${edcs.length} EDC (Existing)`, `${edcs.length + 1} EDC (+ Mandiri)`, 'header')
+    drawRow(`QRIS (${qrisPct}%)`, fmt2(calc.qrisFee), fmt2(calc.qrisFee))
+    drawRow(`Nasabah Mandiri (${mandiriNasabah}%)`, fmt2(calc.mDVol * parseFloat(calc.primary.debitOffUs) / 100 + calc.mKVol * parseFloat(calc.primary.kreditOffUs) / 100), fmt2(calc.mandiriFee))
+    drawRow(`Nasabah Non-Mandiri (${100 - mandiriNasabah}%)`, fmt2(calc.existingFee), fmt2(calc.existingFee))
+    drawRow('TOTAL BIAYA / BULAN', fmt2(calc.feeA), fmt2(calc.feeB), 'total')
     y += 5
 
-    // Savings box
-    doc.setFillColor(22, 163, 74)
-    doc.roundedRect(m, y, cW, 26, 4, 4, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8)
-    doc.text('MERCHANT BISA HEMAT DENGAN 2 EDC', W / 2, y + 7, { align: 'center' })
-    doc.setFontSize(20)
-    doc.text(fmt2(calc.savings), W / 2, y + 18, { align: 'center' })
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
+    doc.setFillColor(22, 163, 74); doc.roundedRect(m, y, cW, 26, 4, 4, 'F')
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
+    doc.text(`MERCHANT BISA HEMAT DENGAN ${edcs.length + 1} EDC`, W / 2, y + 7, { align: 'center' })
+    doc.setFontSize(20); doc.text(fmt2(calc.savings), W / 2, y + 18, { align: 'center' })
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
     doc.text(`per bulan  ·  ${calc.savingsPct.toFixed(1)}% lebih hemat`, W / 2, y + 24, { align: 'center' })
     y += 32
 
-    // Projection
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(20, 30, 50)
     doc.text('PROYEKSI PENGHEMATAN', m, y); y += 5
     ;[['6 Bulan', calc.savings6m], ['1 Tahun', calc.savings1y]].forEach(([p, v]) => {
@@ -211,30 +197,27 @@ function MultiEDCContent() {
       y += 14
     })
 
-    // Footer
     doc.setFillColor(0, 59, 121); doc.rect(0, 272, W, 25, 'F')
     doc.setTextColor(160, 190, 225); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5)
     doc.text('Dokumen simulasi berdasarkan estimasi. Hasil aktual bergantung kebijakan bank.', W / 2, 281, { align: 'center' })
     doc.setTextColor(245, 166, 35); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
     doc.text('PT BANK MANDIRI (PERSERO) Tbk.', W / 2, 289, { align: 'center' })
-
     doc.save(`multi-edc-mandiri-${new Date().toISOString().slice(0, 10)}.pdf`)
   }
 
   const edcPct    = 100 - qrisPct
   const kreditPct = 100 - debitPct
-  const bankLabel = selectedBank || 'Bank Existing'
+  const totalEdc  = edcs.length + 1
 
   return (
     <div className="min-h-screen bg-slate-100 pb-10">
       <Navbar
         title="Kalkulator Multi-EDC"
-        subtitle="Strategi 2 EDC untuk merchant yang tidak mau pindah bank"
+        subtitle="Simulasi penambahan EDC Mandiri untuk merchant"
         showBack
         backHref={merchantId ? `/merchant/${merchantId}` : '/select-branch'}
       />
 
-      {/* Hero */}
       <div className="bg-mandiri-700 px-4 py-5">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <div className="w-10 h-10 bg-cyan-500 rounded-xl flex items-center justify-center shrink-0">
@@ -243,27 +226,26 @@ function MultiEDCContent() {
           <div>
             <h1 className="font-bold text-base text-white">Strategi Multi-EDC</h1>
             <p className="text-mandiri-200 text-xs">
-              Nasabah Mandiri bayar lewat EDC Mandiri — lebih hemat tanpa harus pindah bank
+              {edcs.length} EDC existing + Mandiri = {totalEdc} EDC · nasabah Mandiri bayar On-Us, merchant hemat langsung
             </p>
           </div>
         </div>
       </div>
 
-      {/* Konsep singkat */}
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-3.5 mb-3">
-          <p className="text-xs font-bold text-cyan-800 mb-2">💡 Bagaimana cara kerjanya?</p>
+          <p className="text-xs font-bold text-cyan-800 mb-2">💡 Cara kerja strategi ini</p>
           <div className="space-y-1.5 text-xs text-cyan-700">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 bg-mandiri-700 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">M</span>
-              <span>Nasabah <b>kartu Mandiri</b> → diarahkan ke <b>EDC Mandiri</b> → tarif On-Us <b>0.15%</b></span>
+              <span>Nasabah <b>kartu Mandiri</b> → EDC Mandiri → tarif On-Us <b>0.15%</b> (lebih murah)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 bg-slate-400 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">X</span>
-              <span>Nasabah <b>kartu lain</b> → tetap ke <b>EDC {bankLabel}</b> → tarif On-Us seperti biasa</span>
+              <span>Nasabah <b>kartu lain</b> → tetap ke EDC bank mereka masing-masing → On-Us seperti biasa</span>
             </div>
             <div className="mt-2 pt-2 border-t border-cyan-200 font-semibold">
-              Hemat = selisih tarif Off-Us vs On-Us untuk porsi nasabah Mandiri
+              Hemat = selisih Off-Us vs On-Us untuk porsi nasabah Mandiri · EDC lama tidak dihapus
             </div>
           </div>
         </div>
@@ -291,29 +273,135 @@ function MultiEDCContent() {
           {vol > 0 && <p className="text-xs text-mandiri-600 font-bold mt-1.5">{formatRupiah(vol)} / bulan</p>}
         </div>
 
-        {/* Step 2: Bank + Pattern */}
+        {/* Step 2: EDC Existing (Dynamic) */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shrink-0">
-              <span className="text-white text-xs font-bold">2</span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-white text-xs font-bold">2</span>
+              </div>
+              <div>
+                <p className="font-bold text-slate-800 text-sm">EDC Existing Merchant</p>
+                <p className="text-[11px] text-slate-400">{edcs.length} EDC terpasang · maks. 4</p>
+              </div>
             </div>
-            <p className="font-bold text-slate-800 text-sm">Bank Existing & Pola Transaksi</p>
+            {edcs.length < 4 && (
+              <button
+                onClick={addEdc}
+                className="flex items-center gap-1 text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-2.5 py-1.5 transition-colors"
+              >
+                <Plus size={12} /> Tambah EDC
+              </button>
+            )}
           </div>
 
-          {/* Bank selector */}
-          <p className="text-xs font-bold text-slate-600 mb-2">Bank EDC Saat Ini</p>
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {BANKS.map(b => (
-              <button key={b} type="button"
-                onClick={() => setSelectedBank(prev => prev === b ? '' : b)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
-                  selectedBank === b ? 'bg-red-500 text-white border-red-500' : 'bg-white text-slate-600 border-slate-200 hover:border-red-300'
-                }`}
-              >{b}</button>
-            ))}
+          <div className="space-y-3">
+            {edcs.map((edc, idx) => {
+              const c = COLORS[idx % COLORS.length]
+              const isPrimary = idx === primaryIdx
+              return (
+                <div key={edc.id} className={`border-2 rounded-2xl overflow-hidden transition-all ${isPrimary && edcs.length > 1 ? 'border-amber-300' : 'border-slate-100'}`}>
+                  <div className={`${c.light} px-3 py-2.5 flex items-center gap-2`}>
+                    <div className={`w-7 h-7 ${c.bg} rounded-lg flex items-center justify-center shrink-0`}>
+                      <span className="text-white text-xs font-bold">{idx + 1}</span>
+                    </div>
+                    <p className={`text-xs font-bold ${c.text} flex-1`}>
+                      EDC ke-{idx + 1} {edc.bank ? `— ${edc.bank}` : ''}
+                      {isPrimary && edcs.length > 1 && (
+                        <span className="ml-2 bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded-full font-bold">handle nasabah Mandiri</span>
+                      )}
+                    </p>
+                    {edcs.length > 1 && (
+                      <button onClick={() => removeEdc(idx)} className="p-1 text-slate-300 hover:text-red-400 transition-colors">
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="px-3 py-3 space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 mb-1.5">Pilih Bank</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {BANKS.map(b => (
+                          <button key={b} type="button"
+                            onClick={() => updateEdc(idx, 'bank', edc.bank === b ? '' : b)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border-2 transition-all ${
+                              edc.bank === b ? `${c.bg} text-white border-transparent` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                            }`}
+                          >{b}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => updateEdc(idx, 'showRates', !edc.showRates)}
+                      className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <span className="font-medium truncate mr-2">
+                        Tarif: D-OnUs {edc.debitOnUs}% · D-OffUs {edc.debitOffUs}% · K-OnUs {edc.kreditOnUs}% · K-OffUs {edc.kreditOffUs}% · QRIS {edc.qrisRate}%
+                      </span>
+                      {edc.showRates ? <ChevronUp size={13} className="shrink-0" /> : <ChevronDown size={13} className="shrink-0" />}
+                    </button>
+
+                    {edc.showRates && (
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                        {([
+                          ['Debit On-Us (%)', 'debitOnUs'],
+                          ['Debit Off-Us (%)', 'debitOffUs'],
+                          ['Kredit On-Us (%)', 'kreditOnUs'],
+                          ['Kredit Off-Us (%)', 'kreditOffUs'],
+                          ['QRIS (%)', 'qrisRate'],
+                        ] as [string, keyof EdcEntry][]).map(([lbl, field]) => (
+                          <div key={String(field)} className={field === 'qrisRate' ? 'col-span-2' : ''}>
+                            <label className="text-xs text-slate-500 font-semibold block mb-1">{lbl}</label>
+                            <input type="number" step="0.01" min="0" max="10"
+                              value={edc[field] as string}
+                              onChange={e => updateEdc(idx, field, e.target.value)}
+                              className={`w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 ${c.ring}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
-          {/* QRIS vs Kartu */}
+          {/* Primary EDC selector (only if >1 EDC) */}
+          {edcs.length > 1 && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <p className="text-xs font-bold text-amber-800 mb-2">⚠️ Nasabah Mandiri saat ini diproses EDC mana?</p>
+              <div className="flex flex-wrap gap-1.5">
+                {edcs.map((edc, idx) => (
+                  <button key={edc.id}
+                    onClick={() => setPrimaryIdx(idx)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+                      primaryIdx === idx
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-white text-amber-700 border-amber-300 hover:border-amber-400'
+                    }`}
+                  >
+                    EDC {idx + 1}{edc.bank ? ` (${edc.bank})` : ''}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-amber-500 mt-1.5">
+                Off-Us rate EDC ini digunakan untuk menghitung penghematan nasabah Mandiri
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Step 3: Pola Transaksi */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-bold">3</span>
+            </div>
+            <p className="font-bold text-slate-800 text-sm">Pola Transaksi</p>
+          </div>
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
@@ -327,7 +415,7 @@ function MultiEDCContent() {
                 </div>
                 <input type="range" min={0} max={100} value={qrisPct}
                   onChange={e => setQrisPct(parseInt(e.target.value))}
-                  className={`relative w-full h-2.5 appearance-none bg-transparent cursor-pointer ${THUMB} [&::-webkit-slider-thumb]:border-red-400`}
+                  className={`relative w-full h-2.5 appearance-none bg-transparent cursor-pointer ${THUMB} [&::-webkit-slider-thumb]:border-slate-400`}
                 />
               </div>
             </div>
@@ -352,11 +440,11 @@ function MultiEDCContent() {
           </div>
         </div>
 
-        {/* Step 3: % Nasabah Mandiri — KEY SLIDER */}
+        {/* Step 4: % Nasabah Mandiri */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-mandiri-200">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-6 h-6 bg-mandiri-700 rounded-full flex items-center justify-center shrink-0">
-              <span className="text-white text-xs font-bold">3</span>
+              <span className="text-white text-xs font-bold">4</span>
             </div>
             <div>
               <p className="font-bold text-slate-800 text-sm">Estimasi Nasabah Mandiri</p>
@@ -387,63 +475,21 @@ function MultiEDCContent() {
             </div>
           </div>
 
-          {/* Visual routing */}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-mandiri-50 border border-mandiri-200 rounded-xl p-2.5 text-center">
-              <p className="text-[10px] text-mandiri-500 font-semibold mb-1">→ EDC Mandiri</p>
+              <p className="text-[10px] text-mandiri-500 font-semibold mb-1">→ EDC Mandiri (baru)</p>
               <p className="text-base font-extrabold text-mandiri-700">{mandiriNasabah}%</p>
-              <p className="text-[10px] text-mandiri-400">On-Us 0.15%</p>
+              <p className="text-[10px] text-mandiri-400">On-Us {mDebitOnUs}%</p>
             </div>
             <div className="bg-red-50 border border-red-100 rounded-xl p-2.5 text-center">
-              <p className="text-[10px] text-red-500 font-semibold mb-1">→ EDC {bankLabel}</p>
+              <p className="text-[10px] text-red-500 font-semibold mb-1">→ EDC Existing</p>
               <p className="text-base font-extrabold text-red-600">{100 - mandiriNasabah}%</p>
-              <p className="text-[10px] text-red-400">On-Us seperti biasa</p>
+              <p className="text-[10px] text-red-400">On-Us bank masing-masing</p>
             </div>
           </div>
         </div>
 
-        {/* Rates — Existing */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <button onClick={() => setShowExRates(v => !v)} className="w-full flex items-center gap-3 p-4">
-            <div className="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center text-sm shrink-0">🏦</div>
-            <div className="flex-1 text-left min-w-0">
-              <p className="font-bold text-slate-800 text-sm">Tarif {bankLabel}</p>
-              <p className="text-xs text-slate-400 truncate">
-                Debit On-Us {exDebitOnUs}% · Off-Us {exDebitOffUs}% · Kredit On-Us {exKreditOnUs}% · QRIS {exQrisRate}%
-              </p>
-            </div>
-            {showExRates ? <ChevronUp size={16} className="text-slate-400 shrink-0" /> : <ChevronDown size={16} className="text-slate-400 shrink-0" />}
-          </button>
-          {showExRates && (
-            <div className="px-4 pb-4 border-t border-slate-100 space-y-2">
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {([
-                  ['Debit On-Us (%)', exDebitOnUs, setExDebitOnUs],
-                  ['Debit Off-Us (%)', exDebitOffUs, setExDebitOffUs],
-                  ['Kredit On-Us (%)', exKreditOnUs, setExKreditOnUs],
-                  ['Kredit Off-Us (%)', exKreditOffUs, setExKreditOffUs],
-                ] as [string, string, any][]).map(([label, val, set]) => (
-                  <div key={label}>
-                    <label className="text-xs text-slate-500 font-semibold block mb-1">{label}</label>
-                    <input type="number" step="0.01" min="0" max="10" value={val}
-                      onChange={e => set(e.target.value)}
-                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-200"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div>
-                <label className="text-xs text-slate-500 font-semibold block mb-1">QRIS (%)</label>
-                <input type="number" step="0.01" min="0" max="5" value={exQrisRate}
-                  onChange={e => setExQrisRate(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-200"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Rates — Mandiri */}
+        {/* Tarif Mandiri */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <button onClick={() => setShowMRates(v => !v)} className="w-full flex items-center gap-3 p-4">
             <div className="w-7 h-7 bg-mandiri-100 rounded-lg flex items-center justify-center text-sm shrink-0">🏧</div>
@@ -456,10 +502,7 @@ function MultiEDCContent() {
           {showMRates && (
             <div className="px-4 pb-4 border-t border-slate-100">
               <div className="grid grid-cols-2 gap-2 mt-3">
-                {([
-                  ['Debit On-Us (%)', mDebitOnUs, setMDebitOnUs],
-                  ['Kredit On-Us (%)', mKreditOnUs, setMKreditOnUs],
-                ] as [string, string, any][]).map(([label, val, set]) => (
+                {([['Debit On-Us (%)', mDebitOnUs, setMDebitOnUs], ['Kredit On-Us (%)', mKreditOnUs, setMKreditOnUs]] as [string, string, any][]).map(([label, val, set]) => (
                   <div key={label}>
                     <label className="text-xs text-slate-500 font-semibold block mb-1">{label}</label>
                     <input type="number" step="0.01" min="0" max="10" value={val}
@@ -476,81 +519,88 @@ function MultiEDCContent() {
         {/* ── RESULTS ── */}
         {calc ? (
           <>
-            {/* Fee comparison cards */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
                 <CreditCard size={16} className="text-red-400 mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-red-500 mb-1">1 EDC ({bankLabel})</p>
-                <p className="text-xl font-extrabold text-red-600 leading-tight">{fmt(calc.fee1)}</p>
+                <p className="text-[10px] font-bold text-red-500 mb-1">{edcs.length} EDC Existing</p>
+                <p className="text-xl font-extrabold text-red-600 leading-tight">{fmt(calc.feeA)}</p>
                 <p className="text-[10px] text-red-400 mt-0.5">/ bulan</p>
               </div>
               <div className="bg-mandiri-50 border border-mandiri-200 rounded-2xl p-4 text-center">
                 <Layers size={16} className="text-mandiri-600 mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-mandiri-600 mb-1">2 EDC (+ Mandiri)</p>
-                <p className="text-xl font-extrabold text-mandiri-700 leading-tight">{fmt(calc.fee2)}</p>
+                <p className="text-[10px] font-bold text-mandiri-600 mb-1">{totalEdc} EDC (+ Mandiri)</p>
+                <p className="text-xl font-extrabold text-mandiri-700 leading-tight">{fmt(calc.feeB)}</p>
                 <p className="text-[10px] text-mandiri-400 mt-0.5">/ bulan</p>
               </div>
             </div>
 
-            {/* EDC breakdown (2 EDC scenario) */}
+            {/* Routing breakdown */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <p className="font-bold text-slate-700 text-xs mb-3 uppercase tracking-wide">Rincian 2 EDC — Routing Transaksi</p>
+              <p className="font-bold text-slate-700 text-xs mb-3 uppercase tracking-wide">
+                Routing Transaksi — Skenario {totalEdc} EDC
+              </p>
               <div className="space-y-2">
+                {/* Mandiri EDC (new) */}
                 <div className="flex items-center gap-3 bg-mandiri-50 rounded-xl px-3 py-2.5">
                   <div className="w-8 h-8 bg-mandiri-700 rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-white text-[10px] font-bold">EDC</span>
+                    <span className="text-white text-[10px] font-bold">M</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-mandiri-700">Mandiri EDC</p>
-                    <p className="text-[10px] text-mandiri-500">{mandiriNasabah}% nasabah · {fmt(calc.volMandiriEDC)}/bln · On-Us {mDebitOnUs}%</p>
+                    <p className="text-xs font-bold text-mandiri-700">
+                      Mandiri EDC
+                      <span className="ml-1.5 bg-mandiri-200 text-mandiri-700 text-[9px] px-1.5 py-0.5 rounded-full">BARU</span>
+                    </p>
+                    <p className="text-[10px] text-mandiri-500">{mandiriNasabah}% nasabah · {fmt(calc.mVol)}/bln · On-Us {mDebitOnUs}%</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold text-mandiri-700">{fmt(calc.mandiriEDCFee)}</p>
+                    <p className="text-sm font-extrabold text-mandiri-700">{fmt(calc.mandiriFee)}</p>
                     <p className="text-[10px] text-mandiri-400">fee/bln</p>
                   </div>
                 </div>
+
+                {/* Existing EDCs combined */}
                 <div className="flex items-center gap-3 bg-red-50 rounded-xl px-3 py-2.5">
                   <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-white text-[10px] font-bold">EDC</span>
+                    <span className="text-white text-[9px] font-bold leading-tight text-center">EDC<br/>x{edcs.length}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-red-600">{bankLabel} EDC</p>
-                    <p className="text-[10px] text-red-400">{100 - mandiriNasabah}% nasabah · {fmt(calc.volExistingEDC)}/bln · On-Us {exDebitOnUs}%</p>
+                    <p className="text-xs font-bold text-red-600">
+                      {edcs.map(e => e.bank || 'Existing').join(' + ')} EDC
+                    </p>
+                    <p className="text-[10px] text-red-400">{100 - mandiriNasabah}% nasabah non-Mandiri · {fmt(calc.oVol)}/bln · On-Us masing-masing</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold text-red-600">{fmt(calc.existingEDCFee)}</p>
+                    <p className="text-sm font-extrabold text-red-600">{fmt(calc.existingFee)}</p>
                     <p className="text-[10px] text-red-400">fee/bln</p>
                   </div>
                 </div>
+
+                {/* QRIS */}
                 <div className="flex items-center gap-3 bg-green-50 rounded-xl px-3 py-2.5">
                   <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shrink-0">
                     <span className="text-white text-[10px] font-bold">QR</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-green-700">QRIS</p>
-                    <p className="text-[10px] text-green-500">{qrisPct}% · {fmt(calc.qrisVol)}/bln · {exQrisRate}%</p>
+                    <p className="text-[10px] text-green-500">{qrisPct}% · {fmt(calc.qrisVol)}/bln · {calc.primary.qrisRate}%</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold text-green-700">{fmt(calc.qrisVol * parseFloat(exQrisRate) / 100)}</p>
+                    <p className="text-sm font-extrabold text-green-700">{fmt(calc.qrisFee)}</p>
                     <p className="text-[10px] text-green-400">fee/bln</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Savings hero */}
             {calc.savings > 0 ? (
               <>
                 <div className="bg-green-600 rounded-2xl p-5 text-center shadow-lg">
                   <PiggyBank size={28} className="text-green-200 mx-auto mb-2" />
-                  <p className="text-green-100 text-sm font-semibold">Hemat dengan 2 EDC</p>
+                  <p className="text-green-100 text-sm font-semibold">Hemat dengan {totalEdc} EDC</p>
                   <p className="text-white text-3xl font-extrabold mt-1">{formatRupiah(calc.savings)}</p>
-                  <p className="text-green-200 text-xs mt-1.5">
-                    per bulan · {calc.savingsPct.toFixed(1)}% lebih hemat
-                  </p>
+                  <p className="text-green-200 text-xs mt-1.5">per bulan · {calc.savingsPct.toFixed(1)}% lebih hemat</p>
                 </div>
 
-                {/* Proyeksi */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
                     <Calendar size={18} className="text-mandiri-400 mx-auto mb-1" />
@@ -564,16 +614,15 @@ function MultiEDCContent() {
                   </div>
                 </div>
 
-                {/* Insights */}
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
                   <p className="font-bold text-slate-800 text-sm mb-3">Insight untuk Merchant</p>
                   <div className="space-y-2.5">
                     {[
-                      { icon: '🔀', text: `${mandiriNasabah}% pelanggan punya kartu Mandiri — mereka kini bayar On-Us di EDC Mandiri (${mDebitOnUs}% vs ${exDebitOffUs}% Off-Us di ${bankLabel})` },
-                      { icon: '💳', text: `Selisih tarif debit: ${(parseFloat(exDebitOffUs) - parseFloat(mDebitOnUs)).toFixed(2)}% per transaksi nasabah Mandiri — akumulasinya signifikan tiap bulan` },
-                      { icon: '🏧', text: `Merchant tidak perlu pindah bank — EDC ${bankLabel} tetap berjalan untuk nasabah non-Mandiri` },
-                      { icon: '⚡', text: `Tidak ada biaya tambahan untuk merchant — EDC Mandiri gratis, hemat langsung dirasakan` },
-                      { icon: '📈', text: `Semakin banyak nasabah Mandiri, semakin besar penghematan — Bank Mandiri #1 terbesar di Indonesia` },
+                      { icon: '🔀', text: `${mandiriNasabah}% pelanggan kartu Mandiri — kini bayar On-Us di EDC Mandiri (${mDebitOnUs}% vs ${calc.primary.debitOffUs}% Off-Us sebelumnya)` },
+                      { icon: '💳', text: `Selisih tarif debit: ${(parseFloat(calc.primary.debitOffUs) - parseFloat(mDebitOnUs)).toFixed(2)}% per transaksi nasabah Mandiri — akumulasinya signifikan tiap bulan` },
+                      { icon: '🏧', text: `Merchant tidak perlu hapus EDC lama — semua ${edcs.length} EDC existing tetap berjalan untuk nasabah bank masing-masing` },
+                      { icon: '⚡', text: 'Tidak ada biaya tambahan untuk merchant — EDC Mandiri gratis, hemat langsung dirasakan sejak hari pertama' },
+                      { icon: '📈', text: 'Semakin banyak nasabah Mandiri, semakin besar penghematan — Bank Mandiri #1 terbesar di Indonesia' },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-2.5">
                         <span className="text-base shrink-0">{item.icon}</span>
@@ -583,7 +632,6 @@ function MultiEDCContent() {
                   </div>
                 </div>
 
-                {/* CTA */}
                 <div className="bg-mandiri-700 rounded-2xl p-4 space-y-2.5">
                   <p className="text-white font-bold text-sm text-center">Siap Tambah EDC Mandiri?</p>
                   <button
@@ -593,7 +641,7 @@ function MultiEDCContent() {
                     <CheckCircle2 size={15} /> Lanjutkan Proses Akuisisi <ArrowRight size={13} />
                   </button>
                   <button
-                    onClick={handleDownloadPDF}
+                    onClick={handlePDF}
                     className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
                   >
                     <FileText size={14} /> Download PDF untuk Merchant
@@ -609,11 +657,10 @@ function MultiEDCContent() {
             ) : (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
                 <p className="text-amber-700 font-semibold text-sm">Penghematan minimal pada konfigurasi ini</p>
-                <p className="text-amber-500 text-xs mt-1">Coba naikkan % nasabah Mandiri atau sesuaikan tarif</p>
+                <p className="text-amber-500 text-xs mt-1">Coba naikkan % nasabah Mandiri atau periksa tarif Off-Us EDC existing</p>
               </div>
             )}
 
-            {/* Disclaimer */}
             <div className="flex items-start gap-2 bg-slate-100 rounded-xl p-3">
               <Info size={13} className="text-slate-400 mt-0.5 shrink-0" />
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -625,7 +672,7 @@ function MultiEDCContent() {
           <div className="text-center py-12 text-slate-400">
             <Layers size={40} className="mx-auto mb-3 opacity-20" />
             <p className="font-semibold text-sm">Masukkan omzet merchant</p>
-            <p className="text-xs mt-1">untuk melihat simulasi strategi 2 EDC</p>
+            <p className="text-xs mt-1">untuk melihat simulasi strategi multi-EDC</p>
           </div>
         )}
       </div>
