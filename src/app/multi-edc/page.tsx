@@ -2,7 +2,6 @@
 
 import { useState, useMemo, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 import { Navbar } from '@/components/Navbar'
 import { RotateCcw, Info, Trash2, Lightbulb, CheckCircle2 } from 'lucide-react'
 
@@ -10,60 +9,79 @@ import { RotateCcw, Info, Trash2, Lightbulb, CheckCircle2 } from 'lucide-react'
 type EdcConfig = {
   id: string
   bank: string
-  porsi: number
-  onUsPct: number
-  mdrOnUs: string
-  mdrOffUs: string
+  porsi: number      // % of total merchant volume routed to this EDC
+  qrisPct: number    // % of EDC volume that goes through QRIS
+  onUsPct: number    // % of Kartu (non-QRIS) that is On-Us
+  debitPct: number   // % of Kartu that is Debit (rest = Kredit)
+  mdrQris: string
+  mdrDebitOnUs: string
+  mdrDebitOffUs: string
+  mdrKreditOnUs: string
+  mdrKreditOffUs: string
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const BANKS = [
-  { id: 'mandiri',  name: 'Mandiri',    color: '#003B79' },
-  { id: 'bca',      name: 'BCA',        color: '#0064B4' },
-  { id: 'bri',      name: 'BRI',        color: '#B60000' },
-  { id: 'bni',      name: 'BNI',        color: '#E87722' },
-  { id: 'cimb',     name: 'CIMB Niaga', color: '#7B2B2B' },
-  { id: 'btn',      name: 'BTN',        color: '#1B5E20' },
-  { id: 'danamon',  name: 'Danamon',    color: '#D4145A' },
-  { id: 'permata',  name: 'Permata',    color: '#5C35A5' },
-  { id: 'other',    name: 'Lainnya',    color: '#64748B' },
+  { id: 'mandiri', name: 'Mandiri',    color: '#003B79' },
+  { id: 'bca',     name: 'BCA',        color: '#0064B4' },
+  { id: 'bri',     name: 'BRI',        color: '#B60000' },
+  { id: 'bni',     name: 'BNI',        color: '#E87722' },
+  { id: 'cimb',    name: 'CIMB Niaga', color: '#7B2B2B' },
+  { id: 'btn',     name: 'BTN',        color: '#1B5E20' },
+  { id: 'danamon', name: 'Danamon',    color: '#D4145A' },
+  { id: 'permata', name: 'Permata',    color: '#5C35A5' },
+  { id: 'other',   name: 'Lainnya',    color: '#64748B' },
 ]
 
 const THEMES = [
-  { badge: '#003B79', light: '#EBF3FF', barFade: '#003B7950' },
-  { badge: '#0064B4', light: '#E6F0FA', barFade: '#0064B450' },
-  { badge: '#1E40AF', light: '#EEF2FF', barFade: '#1E40AF50' },
-  { badge: '#D97706', light: '#FFFBEB', barFade: '#D9770650' },
+  { badge: '#003B79', light: '#EBF3FF', fade: '#003B7930' },
+  { badge: '#0064B4', light: '#E6F0FA', fade: '#0064B430' },
+  { badge: '#1E40AF', light: '#EEF2FF', fade: '#1E40AF30' },
+  { badge: '#D97706', light: '#FFFBEB', fade: '#D9770630' },
 ]
 
 const DEFAULTS: EdcConfig[] = [
-  { id: '1', bank: 'mandiri', porsi: 40, onUsPct: 70, mdrOnUs: '0.30', mdrOffUs: '1.60' },
-  { id: '2', bank: 'bca',     porsi: 30, onUsPct: 60, mdrOnUs: '0.40', mdrOffUs: '1.70' },
-  { id: '3', bank: 'bri',     porsi: 20, onUsPct: 50, mdrOnUs: '0.45', mdrOffUs: '1.80' },
-  { id: '4', bank: 'bni',     porsi: 10, onUsPct: 40, mdrOnUs: '0.50', mdrOffUs: '1.90' },
+  { id: '1', bank: 'mandiri', porsi: 40, qrisPct: 30, onUsPct: 70, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.15', mdrDebitOffUs: '1.00', mdrKreditOnUs: '1.80', mdrKreditOffUs: '2.00' },
+  { id: '2', bank: 'bca',     porsi: 30, qrisPct: 30, onUsPct: 60, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.40', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
+  { id: '3', bank: 'bri',     porsi: 20, qrisPct: 30, onUsPct: 50, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.45', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
+  { id: '4', bank: 'bni',     porsi: 10, qrisPct: 30, onUsPct: 40, debitPct: 60, mdrQris: '0.70', mdrDebitOnUs: '0.50', mdrDebitOffUs: '1.00', mdrKreditOnUs: '2.00', mdrKreditOffUs: '2.00' },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtK(n: number) {
-  const abs = Math.abs(n)
-  if (abs >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(1)} M`
-  if (abs >= 1_000_000)     return `Rp ${(n / 1_000_000).toFixed(1)} jt`
-  if (abs >= 1_000)         return `Rp ${(n / 1_000).toFixed(0)} rb`
+  const a = Math.abs(n)
+  if (a >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(1)} M`
+  if (a >= 1_000_000)     return `Rp ${(n / 1_000_000).toFixed(1)} jt`
+  if (a >= 1_000)         return `Rp ${(n / 1_000).toFixed(0)} rb`
   return `Rp ${n.toLocaleString('id-ID')}`
 }
 
-function calcEdc(vol: number, edc: EdcConfig) {
-  const edcVol   = vol * edc.porsi / 100
-  const onUsVol  = edcVol * edc.onUsPct / 100
-  const offUsVol = edcVol * (100 - edc.onUsPct) / 100
-  const onUsFee  = onUsVol  * parseFloat(edc.mdrOnUs)  / 100
-  const offUsFee = offUsVol * parseFloat(edc.mdrOffUs) / 100
-  const totalFee = onUsFee + offUsFee
-  const effMDR   = edcVol > 0 ? (totalFee / edcVol) * 100 : 0
-  return { edcVol, onUsVol, offUsVol, onUsFee, offUsFee, totalFee, effMDR }
+function calcEdc(vol: number, e: EdcConfig) {
+  const edcVol    = vol * e.porsi / 100
+  const qrisVol   = edcVol * e.qrisPct / 100
+  const kartuVol  = edcVol * (100 - e.qrisPct) / 100
+  const onUsVol   = kartuVol * e.onUsPct / 100
+  const offUsVol  = kartuVol * (100 - e.onUsPct) / 100
+  const dOnUs     = onUsVol  * e.debitPct / 100
+  const kOnUs     = onUsVol  * (100 - e.debitPct) / 100
+  const dOffUs    = offUsVol * e.debitPct / 100
+  const kOffUs    = offUsVol * (100 - e.debitPct) / 100
+
+  const feeQris   = qrisVol * parseFloat(e.mdrQris)        / 100
+  const feeDOnUs  = dOnUs   * parseFloat(e.mdrDebitOnUs)   / 100
+  const feeDOffUs = dOffUs  * parseFloat(e.mdrDebitOffUs)  / 100
+  const feeKOnUs  = kOnUs   * parseFloat(e.mdrKreditOnUs)  / 100
+  const feeKOffUs = kOffUs  * parseFloat(e.mdrKreditOffUs) / 100
+
+  const feeDebit  = feeDOnUs + feeDOffUs
+  const feeKredit = feeKOnUs + feeKOffUs
+  const totalFee  = feeQris + feeDebit + feeKredit
+  const effMDR    = edcVol > 0 ? (totalFee / edcVol) * 100 : 0
+
+  return { edcVol, qrisVol, kartuVol, onUsVol, offUsVol, feeQris, feeDebit, feeKredit, totalFee, effMDR }
 }
 
-// ── Label cell (sticky left) ──────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 function LabelCell({ icon, title, sub }: { icon: string; title: string; sub: string }) {
   return (
     <div className="bg-slate-50 border-r border-b border-slate-100 p-3 flex items-start gap-2 sticky left-0 z-10">
@@ -76,8 +94,7 @@ function LabelCell({ icon, title, sub }: { icon: string; title: string; sub: str
   )
 }
 
-// ── Number input ──────────────────────────────────────────────────────────────
-function Num({
+function NumInput({
   value, onChange, step = 1, min = 0, max = 100, suffix = '%', width = 'w-16',
 }: {
   value: string | number; onChange: (v: string) => void
@@ -86,8 +103,7 @@ function Num({
   return (
     <div className="flex items-center gap-1">
       <input
-        type="number" step={step} min={min} max={max}
-        value={value}
+        type="number" step={step} min={min} max={max} value={value}
         onChange={e => onChange(e.target.value)}
         className={`${width} border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white`}
       />
@@ -96,18 +112,24 @@ function Num({
   )
 }
 
+function Bar({ pct, color, fadedColor }: { pct: number; color: string; fadedColor: string }) {
+  return (
+    <div className="h-2 rounded-full overflow-hidden flex mt-2">
+      <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+      <div className="h-full flex-1" style={{ backgroundColor: fadedColor }} />
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 function EDCComparisonContent() {
-  const router = useRouter()
-
   const [numEdc, setNumEdc] = useState<2 | 3 | 4>(2)
-  const [rawVolume, setRawVolume] = useState('1000000000')
-  const [edcs, setEdcs] = useState<EdcConfig[]>(DEFAULTS)
+  const [rawVol, setRawVol] = useState('1000000000')
+  const [edcs, setEdcs]     = useState<EdcConfig[]>(DEFAULTS)
 
-  const vol        = parseFloat(rawVolume.replace(/\D/g, '')) || 0
+  const vol        = parseFloat(rawVol.replace(/\D/g, '')) || 0
   const activeEdcs = edcs.slice(0, numEdc)
-
-  const results = useMemo(() => activeEdcs.map(e => calcEdc(vol, e)), [vol, activeEdcs])
+  const results    = useMemo(() => activeEdcs.map(e => calcEdc(vol, e)), [vol, activeEdcs])
 
   const totalFee      = results.reduce((s, r) => s + r.totalFee, 0)
   const totalEdcVol   = results.reduce((s, r) => s + r.edcVol, 0)
@@ -119,28 +141,23 @@ function EDCComparisonContent() {
   const upd = (idx: number, field: keyof EdcConfig, val: string | number) =>
     setEdcs(prev => prev.map((e, i) => i === idx ? { ...e, [field]: val } : e))
 
-  const resetEdc = (idx: number) =>
-    setEdcs(prev => prev.map((e, i) => i === idx ? { ...DEFAULTS[idx], id: e.id } : e))
+  const clamp = (v: number, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, v))
 
-  const resetAll = () => { setEdcs(DEFAULTS); setNumEdc(2); setRawVolume('1000000000') }
-
-  const bank = (id: string) => BANKS.find(b => b.id === id) ?? BANKS[BANKS.length - 1]
-
-  const cols = numEdc
+  const resetAll = () => { setEdcs(DEFAULTS); setNumEdc(2); setRawVol('1000000000') }
+  const bank     = (id: string) => BANKS.find(b => b.id === id) ?? BANKS[BANKS.length - 1]
 
   return (
     <div className="min-h-screen bg-[#F4F7FB]">
       <Navbar
         title="EDC Cost Comparison Calculator"
         subtitle="Bandingkan biaya & potongan dari 2–4 mesin EDC sekaligus"
-        showBack
-        backHref="/select-branch"
+        showBack backHref="/select-branch"
       />
 
       <div className="p-3 md:p-5 max-w-[1440px] mx-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
 
-          {/* ── Header ───────────────────────────────────────────────────── */}
+          {/* ── Header ── */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
             <div>
               <h1 className="text-base font-extrabold text-slate-800">Perbandingan Kalkulator Mesin EDC</h1>
@@ -156,55 +173,48 @@ function EDCComparisonContent() {
                 ))}
               </div>
               <button onClick={resetAll}
-                className="flex items-center gap-1.5 px-3 h-9 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 h-9 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
               >
                 <RotateCcw size={13} /> Reset Semua
               </button>
             </div>
           </div>
 
-          {/* ── Stats bar ───────────────────────────────────────────────── */}
+          {/* ── Stats bar ── */}
           <div className="grid grid-cols-2 md:grid-cols-5 border-b border-slate-100 divide-x divide-y md:divide-y-0 divide-slate-100">
-            {/* Omset */}
             <div className="p-4 col-span-2 md:col-span-1">
               <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
                 Omset Bulanan (Rp) <Info size={10} className="text-slate-300" />
               </p>
               <div className="flex items-center gap-1 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50">
-                <span className="text-xs text-slate-400 font-medium shrink-0">Rp</span>
+                <span className="text-xs text-slate-400 shrink-0">Rp</span>
                 <input
                   type="text" inputMode="numeric"
                   value={vol > 0 ? vol.toLocaleString('id-ID') : ''}
-                  onChange={e => setRawVolume(e.target.value.replace(/\D/g, ''))}
+                  onChange={e => setRawVol(e.target.value.replace(/\D/g, ''))}
                   placeholder="0"
                   className="flex-1 min-w-0 text-sm font-bold text-slate-800 font-mono focus:outline-none bg-transparent"
                 />
               </div>
             </div>
-
             <div className="p-4">
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Total Potongan</p>
               <p className={`text-xl font-extrabold ${totalFee > 0 ? 'text-red-500' : 'text-slate-200'}`}>{fmtK(totalFee)}</p>
             </div>
-
             <div className="p-4">
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Effective MDR</p>
               <p className={`text-xl font-extrabold ${avgEffMDR > 0 ? 'text-slate-700' : 'text-slate-200'}`}>{avgEffMDR.toFixed(2)}%</p>
             </div>
-
             <div className="p-4">
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Net Settlement</p>
               <p className={`text-xl font-extrabold ${netSettlement > 0 ? 'text-green-600' : 'text-slate-200'}`}>{fmtK(netSettlement)}</p>
             </div>
-
             <div className="p-4 bg-blue-50 col-span-2 md:col-span-1">
               <div className="flex items-start gap-2">
                 <Info size={13} className="text-blue-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-[11px] font-bold text-blue-700 mb-0.5">Catatan</p>
-                  <p className="text-[11px] text-blue-600 leading-relaxed">
-                    Perhitungan bersifat estimasi berdasarkan MDR dan porsi penggunaan yang Anda input.
-                  </p>
+                  <p className="text-[11px] text-blue-600 leading-relaxed">Estimasi berdasarkan MDR dan porsi penggunaan yang diinput.</p>
                   {porsiSum !== 100 && vol > 0 && (
                     <p className="text-[10px] text-amber-600 font-bold mt-1">⚠️ Porsi total: {porsiSum}% (seharusnya 100%)</p>
                   )}
@@ -213,144 +223,242 @@ function EDCComparisonContent() {
             </div>
           </div>
 
-          {/* ── Comparison Grid ─────────────────────────────────────────── */}
+          {/* ── Comparison Grid ── */}
           <div className="overflow-x-auto">
             <div
               className="grid"
               style={{
-                gridTemplateColumns: `140px repeat(${cols}, minmax(210px, 1fr))`,
-                minWidth: `${140 + cols * 210}px`,
+                gridTemplateColumns: `140px repeat(${numEdc}, minmax(220px, 1fr))`,
+                minWidth: `${140 + numEdc * 220}px`,
               }}
             >
-              {/* ── Row: EDC Headers ── */}
+
+              {/* ── EDC Headers ── */}
               <div className="bg-slate-50 border-r border-b border-slate-100 p-3 sticky left-0 z-10">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MESIN EDC</span>
               </div>
               {activeEdcs.map((edc, idx) => {
-                const t = THEMES[idx]
-                const b = bank(edc.bank)
+                const t = THEMES[idx]; const b = bank(edc.bank)
                 return (
                   <div key={edc.id} className="border-r border-b border-slate-100 p-3" style={{ backgroundColor: t.light }}>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-md shrink-0" style={{ backgroundColor: t.badge }}>
                         EDC {idx + 1}
                       </span>
-                      <select
-                        value={edc.bank}
-                        onChange={e => upd(idx, 'bank', e.target.value)}
+                      <select value={edc.bank} onChange={e => upd(idx, 'bank', e.target.value)}
                         className="flex-1 min-w-0 text-sm font-bold border-0 bg-transparent focus:outline-none cursor-pointer"
                         style={{ color: b.color }}
                       >
                         {BANKS.map(bk => <option key={bk.id} value={bk.id}>{bk.name}</option>)}
                       </select>
-                      <button onClick={() => resetEdc(idx)} className="text-slate-300 hover:text-red-400 transition-colors shrink-0" title="Reset EDC ini">
-                        <Trash2 size={13} />
-                      </button>
+                      <button onClick={() => setEdcs(prev => prev.map((e, i) => i === idx ? { ...DEFAULTS[idx], id: e.id } : e))}
+                        className="text-slate-300 hover:text-red-400 transition-colors shrink-0" title="Reset EDC ini"
+                      ><Trash2 size={13} /></button>
                     </div>
                   </div>
                 )
               })}
 
-              {/* ── Row: Porsi Penggunaan ── */}
+              {/* ── Row 1: Porsi + QRIS/Kartu split ── */}
               <LabelCell icon="🏧" title="EDC & Porsi" sub="Penggunaan" />
               {activeEdcs.map((edc, idx) => {
                 const t = THEMES[idx]
+                const kartuPct = 100 - edc.qrisPct
                 return (
-                  <div key={edc.id} className="border-r border-b border-slate-100 p-4">
-                    <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-2">
-                      Porsi Penggunaan EDC <Info size={10} className="text-slate-300" />
-                    </p>
-                    <Num
-                      value={edc.porsi} min={0} max={100}
-                      onChange={v => upd(idx, 'porsi', Math.min(100, Math.max(0, parseInt(v) || 0)))}
-                    />
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden mt-2.5">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${edc.porsi}%`, backgroundColor: t.badge }} />
+                  <div key={edc.id} className="border-r border-b border-slate-100 p-4 space-y-3">
+                    {/* Porsi EDC */}
+                    <div>
+                      <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-1.5">
+                        Porsi Penggunaan EDC <Info size={10} className="text-slate-300" />
+                      </p>
+                      <NumInput value={edc.porsi} onChange={v => upd(idx, 'porsi', clamp(parseInt(v) || 0))} />
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden mt-2">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${edc.porsi}%`, backgroundColor: t.badge }} />
+                      </div>
+                      <p className="text-[10px] text-slate-400 text-right mt-1">{edc.porsi}%</p>
                     </div>
-                    <p className="text-[10px] text-slate-400 text-right mt-1">{edc.porsi}%</p>
+
+                    {/* QRIS vs Kartu split */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <p className="text-[11px] font-semibold text-slate-500 mb-1.5">Proporsi Transaksi</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-[10px] font-semibold text-green-600 mb-1">QRIS</p>
+                          <NumInput value={edc.qrisPct}
+                            onChange={v => upd(idx, 'qrisPct', clamp(parseInt(v) || 0))} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-blue-600 mb-1">Kartu EDC</p>
+                          <NumInput value={kartuPct}
+                            onChange={v => upd(idx, 'qrisPct', clamp(100 - (parseInt(v) || 0)))} />
+                        </div>
+                      </div>
+                      {/* QRIS green / Kartu blue bar */}
+                      <div className="h-2 rounded-full overflow-hidden flex mt-2">
+                        <div className="h-full transition-all bg-green-400" style={{ width: `${edc.qrisPct}%` }} />
+                        <div className="h-full flex-1 bg-blue-400" />
+                      </div>
+                      <div className="flex justify-between text-[10px] mt-1">
+                        <span className="text-green-500 font-semibold">QRIS {edc.qrisPct}%</span>
+                        <span className="text-blue-500 font-semibold">Kartu {kartuPct}%</span>
+                      </div>
+                    </div>
                   </div>
                 )
               })}
 
-              {/* ── Row: Mix Transaksi ── */}
-              <LabelCell icon="🔄" title="Mix Transaksi" sub="(On-Us / Off-Us)" />
+              {/* ── Row 2: Mix Transaksi (On-Us/Off-Us + Debit/Kredit) ── */}
+              <LabelCell icon="🔄" title="Mix Transaksi" sub="On-Us / Off-Us / Debit / Kredit" />
               {activeEdcs.map((edc, idx) => {
-                const t   = THEMES[idx]
-                const off = 100 - edc.onUsPct
+                const t = THEMES[idx]
+                const offUsPct  = 100 - edc.onUsPct
+                const kreditPct = 100 - edc.debitPct
                 return (
-                  <div key={edc.id} className="border-r border-b border-slate-100 p-4">
-                    <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-2">
-                      Mix Transaksi <Info size={10} className="text-slate-300" />
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 mb-2.5">
-                      <div>
-                        <p className="text-[10px] text-slate-500 font-semibold mb-1">On-Us (Nasabah Bank)</p>
-                        <Num value={edc.onUsPct} onChange={v => upd(idx, 'onUsPct', Math.min(100, Math.max(0, parseInt(v) || 0)))} />
+                  <div key={edc.id} className="border-r border-b border-slate-100 p-4 space-y-3">
+                    {/* On-Us / Off-Us */}
+                    <div>
+                      <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-1.5">
+                        On-Us vs Off-Us (Kartu) <Info size={10} className="text-slate-300" />
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-[10px] font-semibold text-slate-500 mb-1">On-Us</p>
+                          <NumInput value={edc.onUsPct}
+                            onChange={v => upd(idx, 'onUsPct', clamp(parseInt(v) || 0))} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-slate-500 mb-1">Off-Us</p>
+                          <NumInput value={offUsPct}
+                            onChange={v => upd(idx, 'onUsPct', clamp(100 - (parseInt(v) || 0)))} />
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-slate-500 font-semibold mb-1">Off-Us (Bank Lain)</p>
-                        <Num value={off} onChange={v => upd(idx, 'onUsPct', Math.min(100, Math.max(0, 100 - (parseInt(v) || 0))))} />
+                      <Bar pct={edc.onUsPct} color={t.badge} fadedColor={t.fade} />
+                      <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                        <span>{edc.onUsPct}%</span><span>{offUsPct}%</span>
                       </div>
                     </div>
-                    <div className="h-2 rounded-full overflow-hidden flex">
-                      <div className="h-full transition-all" style={{ width: `${edc.onUsPct}%`, backgroundColor: t.badge }} />
-                      <div className="h-full flex-1" style={{ backgroundColor: t.barFade }} />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                      <span>{edc.onUsPct}%</span><span>{off}%</span>
+
+                    {/* Debit / Kredit */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <p className="text-[11px] font-semibold text-slate-500 mb-1.5">Debit vs Kredit (Kartu)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-[10px] font-semibold text-blue-600 mb-1">Debit</p>
+                          <NumInput value={edc.debitPct}
+                            onChange={v => upd(idx, 'debitPct', clamp(parseInt(v) || 0))} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold text-purple-600 mb-1">Kredit</p>
+                          <NumInput value={kreditPct}
+                            onChange={v => upd(idx, 'debitPct', clamp(100 - (parseInt(v) || 0)))} />
+                        </div>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden flex mt-2">
+                        <div className="h-full transition-all bg-blue-400" style={{ width: `${edc.debitPct}%` }} />
+                        <div className="h-full flex-1 bg-purple-300" />
+                      </div>
+                      <div className="flex justify-between text-[10px] mt-1">
+                        <span className="text-blue-500 font-semibold">Debit {edc.debitPct}%</span>
+                        <span className="text-purple-500 font-semibold">Kredit {kreditPct}%</span>
+                      </div>
                     </div>
                   </div>
                 )
               })}
 
-              {/* ── Row: MDR ── */}
-              <LabelCell icon="💱" title="MDR (%)" sub="On-Us & Off-Us" />
+              {/* ── Row 3: MDR split (QRIS / Debit / Kredit) ── */}
+              <LabelCell icon="💱" title="MDR (%)" sub="QRIS · Debit · Kredit" />
               {activeEdcs.map((edc, idx) => (
-                <div key={edc.id} className="border-r border-b border-slate-100 p-4">
-                  <p className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 mb-2">
-                    MDR (%) <Info size={10} className="text-slate-300" />
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-[10px] text-slate-500 font-semibold mb-1">On-Us</p>
-                      <Num value={edc.mdrOnUs} step={0.01} max={10} onChange={v => upd(idx, 'mdrOnUs', v)} />
+                <div key={edc.id} className="border-r border-b border-slate-100 p-4 space-y-3">
+                  {/* MDR QRIS */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-green-600 mb-1.5 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> MDR QRIS
+                    </p>
+                    <NumInput value={edc.mdrQris} step={0.01} max={5}
+                      onChange={v => upd(idx, 'mdrQris', v)} />
+                  </div>
+
+                  {/* MDR Kartu Debit */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <p className="text-[11px] font-semibold text-blue-600 mb-1.5 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> MDR Kartu Debit
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold mb-1">On-Us</p>
+                        <NumInput value={edc.mdrDebitOnUs} step={0.01} max={10}
+                          onChange={v => upd(idx, 'mdrDebitOnUs', v)} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold mb-1">Off-Us</p>
+                        <NumInput value={edc.mdrDebitOffUs} step={0.01} max={10}
+                          onChange={v => upd(idx, 'mdrDebitOffUs', v)} />
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-slate-500 font-semibold mb-1">Off-Us</p>
-                      <Num value={edc.mdrOffUs} step={0.01} max={10} onChange={v => upd(idx, 'mdrOffUs', v)} />
+                  </div>
+
+                  {/* MDR Kartu Kredit */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <p className="text-[11px] font-semibold text-purple-600 mb-1.5 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-purple-400 inline-block" /> MDR Kartu Kredit
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold mb-1">On-Us</p>
+                        <NumInput value={edc.mdrKreditOnUs} step={0.01} max={10}
+                          onChange={v => upd(idx, 'mdrKreditOnUs', v)} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold mb-1">Off-Us</p>
+                        <NumInput value={edc.mdrKreditOffUs} step={0.01} max={10}
+                          onChange={v => upd(idx, 'mdrKreditOffUs', v)} />
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
 
-              {/* ── Row: Hasil Perhitungan ── */}
+              {/* ── Row 4: Hasil Perhitungan ── */}
               <LabelCell icon="📊" title="Hasil" sub="Perhitungan" />
               {results.map((r, idx) => {
-                const edc = activeEdcs[idx]
-                const t   = THEMES[idx]
-                const isB = idx === bestIdx
+                const edc = activeEdcs[idx]; const t = THEMES[idx]
+                const isB = idx === bestIdx && vol > 0
                 return (
                   <div key={edc.id} className="border-r border-slate-100 p-4">
-                    <div className="space-y-2 mb-3 text-xs">
+                    <div className="space-y-1.5 mb-3 text-xs">
                       <div className="flex justify-between">
                         <span className="text-slate-500">Volume Transaksi</span>
                         <span className="font-semibold text-slate-700">{fmtK(r.edcVol)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500">Potongan On-Us ({edc.onUsPct}%)</span>
-                        <span className="font-semibold text-slate-600">{fmtK(r.onUsFee)}</span>
+                      <div className="flex justify-between pt-1 border-t border-slate-50">
+                        <span className="text-green-600 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                          Potongan QRIS ({edc.qrisPct}%)
+                        </span>
+                        <span className="font-semibold text-slate-600">{fmtK(r.feeQris)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Potongan Off-Us ({100 - edc.onUsPct}%)</span>
-                        <span className="font-semibold text-slate-600">{fmtK(r.offUsFee)}</span>
+                        <span className="text-blue-600 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                          Potongan Kartu Debit
+                        </span>
+                        <span className="font-semibold text-slate-600">{fmtK(r.feeDebit)}</span>
                       </div>
-                      <div className="flex justify-between font-bold pt-1 border-t border-slate-100">
+                      <div className="flex justify-between">
+                        <span className="text-purple-600 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                          Potongan Kartu Kredit
+                        </span>
+                        <span className="font-semibold text-slate-600">{fmtK(r.feeKredit)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold pt-1.5 border-t border-slate-100">
                         <span className="text-red-600">Total Potongan</span>
                         <span className="text-red-600">{fmtK(r.totalFee)}</span>
                       </div>
                     </div>
                     <div className="relative rounded-xl p-3 text-center overflow-hidden" style={{ backgroundColor: t.badge }}>
-                      {isB && vol > 0 && (
+                      {isB && (
                         <div className="absolute top-1.5 right-2">
                           <span className="text-[9px] font-black text-white bg-green-500 px-1.5 py-0.5 rounded-full">TERBAIK</span>
                         </div>
@@ -364,89 +472,60 @@ function EDCComparisonContent() {
             </div>
           </div>
 
-          {/* ── Summary Table + Insights ─────────────────────────────────── */}
+          {/* ── Summary + Insights ── */}
           <div className="p-5 border-t border-slate-100">
             <div className="flex gap-5 flex-col xl:flex-row">
-
-              {/* Table */}
               <div className="flex-1 overflow-x-auto">
                 <p className="text-sm font-bold text-slate-700 mb-3">Ringkasan Perbandingan</p>
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="border-b-2 border-slate-100">
-                      <th className="text-left font-semibold text-slate-500 py-2 pr-4 w-44 whitespace-nowrap">Metrik</th>
-                      {activeEdcs.map((edc, idx) => {
-                        const b = bank(edc.bank)
-                        return (
-                          <th key={edc.id} className="text-center font-bold py-2 px-3 whitespace-nowrap" style={{ color: b.color }}>
-                            {b.name}
-                          </th>
-                        )
-                      })}
+                      <th className="text-left font-semibold text-slate-500 py-2 pr-4 w-48">Metrik</th>
+                      {activeEdcs.map((edc, idx) => (
+                        <th key={edc.id} className="text-center font-bold py-2 px-3 whitespace-nowrap"
+                          style={{ color: bank(edc.bank).color }}>{bank(edc.bank).name}</th>
+                      ))}
                       <th className="text-center font-bold text-slate-700 py-2 px-3">TOTAL</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      {
-                        label: 'Porsi Penggunaan EDC',
-                        vals: activeEdcs.map(e => `${e.porsi}%`),
-                        total: <span className={porsiSum === 100 ? 'text-green-600 font-black' : 'text-amber-600 font-black'}>{porsiSum}%</span>,
-                      },
-                      {
-                        label: 'Volume Transaksi (Rp)',
-                        vals: results.map(r => r.edcVol.toLocaleString('id-ID')),
-                        total: totalEdcVol.toLocaleString('id-ID'),
-                      },
-                      {
-                        label: 'Rata-rata MDR On-Us (%)',
-                        vals: activeEdcs.map(e => `${e.mdrOnUs}%`),
-                        total: '—',
-                      },
-                      {
-                        label: 'Rata-rata MDR Off-Us (%)',
-                        vals: activeEdcs.map(e => `${e.mdrOffUs}%`),
-                        total: '—',
-                      },
+                      { label: 'Porsi EDC', vals: activeEdcs.map(e => `${e.porsi}%`), total: <span className={porsiSum === 100 ? 'text-green-600 font-black' : 'text-amber-600 font-black'}>{porsiSum}%</span> },
+                      { label: 'Volume Transaksi (Rp)', vals: results.map(r => r.edcVol.toLocaleString('id-ID')), total: totalEdcVol.toLocaleString('id-ID') },
+                      { label: 'QRIS %', vals: activeEdcs.map(e => `${e.qrisPct}%`), total: '—' },
+                      { label: 'Debit % / Kredit %', vals: activeEdcs.map(e => `${e.debitPct}% / ${100 - e.debitPct}%`), total: '—' },
+                      { label: 'MDR QRIS', vals: activeEdcs.map(e => `${e.mdrQris}%`), total: '—' },
+                      { label: 'MDR Debit On-Us / Off-Us', vals: activeEdcs.map(e => `${e.mdrDebitOnUs}% / ${e.mdrDebitOffUs}%`), total: '—' },
+                      { label: 'MDR Kredit On-Us / Off-Us', vals: activeEdcs.map(e => `${e.mdrKreditOnUs}% / ${e.mdrKreditOffUs}%`), total: '—' },
                     ].map((row, ri) => (
                       <tr key={ri} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                        <td className="py-2.5 pr-4 text-slate-500 font-medium whitespace-nowrap">{row.label}</td>
-                        {row.vals.map((v, vi) => (
-                          <td key={vi} className="text-center py-2.5 px-3 font-semibold text-slate-700">{v}</td>
-                        ))}
-                        <td className="text-center py-2.5 px-3 font-bold text-slate-500">
+                        <td className="py-2 pr-4 text-slate-500 font-medium whitespace-nowrap">{row.label}</td>
+                        {row.vals.map((v, vi) => <td key={vi} className="text-center py-2 px-3 font-semibold text-slate-700">{v}</td>)}
+                        <td className="text-center py-2 px-3 font-bold text-slate-500">
                           {typeof row.total === 'string' ? row.total : row.total}
                         </td>
                       </tr>
                     ))}
-                    <tr className="border-t-2 border-slate-200 hover:bg-red-50 transition-colors">
-                      <td className="py-2.5 pr-4 font-bold text-slate-700 whitespace-nowrap">Total Potongan (Rp)</td>
+                    <tr className="border-t-2 border-slate-200 hover:bg-red-50">
+                      <td className="py-2.5 pr-4 font-bold text-slate-700">Total Potongan (Rp)</td>
                       {results.map((r, i) => (
-                        <td key={i} className="text-center py-2.5 px-3 font-bold text-red-500">
-                          {r.totalFee.toLocaleString('id-ID')}
-                        </td>
+                        <td key={i} className="text-center py-2.5 px-3 font-bold text-red-500">{r.totalFee.toLocaleString('id-ID')}</td>
                       ))}
                       <td className="text-center py-2.5 px-3 font-black text-red-600">{totalFee.toLocaleString('id-ID')}</td>
                     </tr>
-                    <tr className="hover:bg-blue-50 transition-colors">
-                      <td className="py-2.5 pr-4 font-bold text-slate-700 whitespace-nowrap">Effective MDR (%)</td>
-                      {results.map((r, i) => {
-                        const t = THEMES[i]
-                        const isB = i === bestIdx && vol > 0
-                        return (
-                          <td key={i} className="text-center py-2.5 px-3 font-black" style={{ color: t.badge }}>
-                            {r.effMDR.toFixed(2)}%
-                            {isB && <span className="ml-1 text-[9px] font-black text-green-500">✓</span>}
-                          </td>
-                        )
-                      })}
+                    <tr className="hover:bg-blue-50">
+                      <td className="py-2.5 pr-4 font-bold text-slate-700">Effective MDR (%)</td>
+                      {results.map((r, i) => (
+                        <td key={i} className="text-center py-2.5 px-3 font-black" style={{ color: THEMES[i].badge }}>
+                          {r.effMDR.toFixed(2)}%{i === bestIdx && vol > 0 && <span className="ml-1 text-[9px] text-green-500">✓</span>}
+                        </td>
+                      ))}
                       <td className="text-center py-2.5 px-3 font-black text-[#003B79]">{avgEffMDR.toFixed(2)}%</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* Insights */}
               <div className="xl:w-72 bg-amber-50 border border-amber-200 rounded-xl p-4 shrink-0">
                 <div className="flex items-center gap-2 mb-3">
                   <Lightbulb size={15} className="text-amber-500" />
@@ -456,22 +535,19 @@ function EDCComparisonContent() {
                   <div className="space-y-3 text-xs text-amber-800">
                     <div className="flex items-start gap-2">
                       <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
-                      <span>Total potongan terendah di kombinasi ini adalah <b>{fmtK(totalFee)}</b></span>
+                      <span>Total potongan semua EDC: <b>{fmtK(totalFee)}</b></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
-                      <span>
-                        EDC paling efisien (Effective MDR terendah) adalah{' '}
-                        <b>{bank(activeEdcs[bestIdx]?.bank ?? 'mandiri').name} ({results[bestIdx]?.effMDR.toFixed(2)}%)</b>
-                      </span>
+                      <span>EDC paling efisien: <b>{bank(activeEdcs[bestIdx]?.bank ?? 'mandiri').name} ({results[bestIdx]?.effMDR.toFixed(2)}%)</b></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
-                      <span>Net settlement merchant setelah semua potongan: <b>{fmtK(netSettlement)}</b></span>
+                      <span>Net settlement merchant: <b>{fmtK(netSettlement)}</b></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 size={13} className="text-green-500 mt-0.5 shrink-0" />
-                      <span>Sesuaikan porsi penggunaan dan MDR untuk mendapatkan simulasi terbaik</span>
+                      <span>Naikkan % On-Us untuk memperkecil potongan kartu</span>
                     </div>
                   </div>
                 ) : (
