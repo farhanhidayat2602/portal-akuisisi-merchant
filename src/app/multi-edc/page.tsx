@@ -123,7 +123,7 @@ function Bar({ pct, color, fadedColor }: { pct: number; color: string; fadedColo
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 function EDCComparisonContent() {
-  const [numEdc, setNumEdc] = useState<2 | 3 | 4>(2)
+  const [numEdc, setNumEdc] = useState<1 | 2 | 3 | 4>(1)
   const [rawVol, setRawVol] = useState('1000000000')
   const [edcs, setEdcs]     = useState<EdcConfig[]>(DEFAULTS)
 
@@ -143,14 +143,14 @@ function EDCComparisonContent() {
 
   const clamp = (v: number, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, v))
 
-  const resetAll = () => { setEdcs(DEFAULTS); setNumEdc(2); setRawVol('1000000000') }
+  const resetAll = () => { setEdcs(DEFAULTS); setNumEdc(1); setRawVol('1000000000') }
   const bank     = (id: string) => BANKS.find(b => b.id === id) ?? BANKS[BANKS.length - 1]
 
   return (
     <div className="min-h-screen bg-[#F4F7FB]">
       <Navbar
         title="EDC Cost Comparison Calculator"
-        subtitle="Bandingkan biaya & potongan dari 2–4 mesin EDC sekaligus"
+        subtitle="Mulai dari 1 EDC, lalu tambah EDC untuk lihat penghematan potongan"
         showBack backHref="/select-branch"
       />
 
@@ -161,12 +161,12 @@ function EDCComparisonContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
             <div>
               <h1 className="text-base font-extrabold text-slate-800">Perbandingan Kalkulator Mesin EDC</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Bandingkan biaya &amp; potongan dari 2–4 mesin EDC sekaligus</p>
+              <p className="text-xs text-slate-400 mt-0.5">Mulai 1 EDC sebagai baseline → tambah EDC → potongan makin kecil karena On-Us naik</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Jumlah Mesin EDC:</span>
               <div className="flex gap-1">
-                {([2, 3, 4] as const).map(n => (
+                {([1, 2, 3, 4] as const).map(n => (
                   <button key={n} onClick={() => setNumEdc(n)}
                     className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${numEdc === n ? 'bg-[#003B79] text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   >{n}</button>
