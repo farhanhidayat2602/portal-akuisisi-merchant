@@ -186,10 +186,10 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 text-center">
-            <button className="inline-flex items-center gap-2 text-[14px] font-bold text-[#0064B4] hover:text-[#003B79] transition-colors">
+            <a href="https://wa.me/628988887761?text=Halo%2C%20saya%20membutuhkan%20bantuan%20terkait%20Portal%20Akuisisi%20Merchant." target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[14px] font-bold text-[#0064B4] hover:text-[#003B79] transition-colors">
               <ShieldCheck size={18} />
               Butuh bantuan?
-            </button>
+            </a>
           </div>
         </div>
         
