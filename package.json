@@ -14,7 +14,8 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
     "db:add-merchants": "tsx prisma/add-merchants.ts",
-    "db:import-sudirman": "tsx prisma/import-sudirman.ts"
+    "db:import-sudirman": "tsx prisma/import-sudirman.ts",
+    "db:update-credentials": "tsx prisma/update-credentials.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",

@@ -1204,7 +1204,7 @@ function UserManagement() {
                 onChange={e => setNewUsername(e.target.value)}
                 required autoFocus
               />
-              <p className="text-[10px] text-slate-400 mt-0.5">Format: bft_namacabang</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Format: pic.namacabang</p>
             </div>
             <div>
               <label className="label text-xs">Password</label>
@@ -1215,7 +1215,7 @@ function UserManagement() {
                 onChange={e => setNewPassword(e.target.value)}
                 required
               />
-              <p className="text-[10px] text-slate-400 mt-0.5">Format: NamaCabang123</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Password default: pic123</p>
             </div>
             <div className="flex gap-2 pt-1">
               <button type="submit" disabled={saving} className="btn-primary flex-1 text-sm">
@@ -1326,8 +1326,8 @@ function UserManagement() {
       <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
         <AlertTriangle size={13} className="text-amber-600 mt-0.5 shrink-0" />
         <p className="text-xs text-amber-700">
-          Format username: <code className="bg-amber-100 px-1 rounded font-mono">bft_namacabang</code> &nbsp;·&nbsp;
-          Password default: <code className="bg-amber-100 px-1 rounded font-mono">namacabang123</code>
+          Format username: <code className="bg-amber-100 px-1 rounded font-mono">pic.namacabang</code> &nbsp;·&nbsp;
+          Password default: <code className="bg-amber-100 px-1 rounded font-mono">pic123</code>
         </p>
       </div>
     </div>

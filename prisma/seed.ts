@@ -279,18 +279,17 @@ async function main() {
   }
   console.log(`  ✓ ${merchantIndex} merchants created`)
 
-  // Create users
-  const hashedPassword = await bcrypt.hash('mandiri123', 10)
-  const adminPassword = await bcrypt.hash('admin2024', 10)
+  // Create users — semua password: pic123
+  const sharedPw   = await bcrypt.hash('pic123', 10)
 
   await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { password: sharedPw },
     create: {
       username: 'admin',
       name: 'Administrator',
       email: 'admin@bankmandiri.co.id',
-      password: adminPassword,
+      password: sharedPw,
       role: 'ADMIN',
       points: 0,
     },
@@ -300,69 +299,68 @@ async function main() {
   await prisma.user.deleteMany({ where: { role: 'SALES' } })
   console.log('  🧹 Akun sales lama dihapus')
 
-  // username → [branchCode, namaAsli (untuk password)]
-  const salesUsers: [string, string, string][] = [
+  // username → [branchCode] — format pic.<namacabang> / pic123
+  const salesUsers: [string, string][] = [
     // Balikpapan
-    ['bft_klandasan',       'Klandasan',       'KC_KLANDASAN'],
-    ['bft_suprapto',        'Suprapto',        'KC_SUPRAPTO'],
-    ['bft_ahmadyani',       'AhmadYani',       'KC_AHMAD_YANI'],
-    ['bft_sudirman',        'Sudirman',        'KC_SUDIRMAN'],
-    ['bft_balikpapanbaru',  'BalikpapanBaru',  'KC_BALIKPAPAN_BARU'],
-    ['bft_karangjati',      'KarangJati',      'KC_KARANG_JATI'],
-    ['bft_batakan',         'Batakan',         'KC_BATAKAN'],
-    ['bft_telkomdivre',     'TelkomDivre',     'KC_TELKOM_DIVRE'],
-    ['bft_muararapak',      'MuaraRapak',      'KC_MUARA_RAPAK'],
-    ['bft_superblock',      'Superblock',      'KC_SUPERBLOCK'],
-    ['bft_soekarnohatta',   'SoekarnoHatta',   'KC_SOEKARNO_HATTA'],
-    ['bft_sepaku',          'Sepaku',          'KC_SEPAKU'],
+    ['pic.klandasan',       'KC_KLANDASAN'],
+    ['pic.suprapto',        'KC_SUPRAPTO'],
+    ['pic.ahmadyani',       'KC_AHMAD_YANI'],
+    ['pic.sudirman',        'KC_SUDIRMAN'],
+    ['pic.balikpapanbaru',  'KC_BALIKPAPAN_BARU'],
+    ['pic.karangjati',      'KC_KARANG_JATI'],
+    ['pic.batakan',         'KC_BATAKAN'],
+    ['pic.telkomdivre',     'KC_TELKOM_DIVRE'],
+    ['pic.muararapak',      'KC_MUARA_RAPAK'],
+    ['pic.superblock',      'KC_SUPERBLOCK'],
+    ['pic.soekarnohatta',   'KC_SOEKARNO_HATTA'],
+    ['pic.sepaku',          'KC_SEPAKU'],
     // Paser
-    ['bft_tanahgrogot',     'TanahGrogot',     'KC_TANAH_GROGOT'],
-    ['bft_batukajang',      'BatuKajang',      'KC_BATU_KAJANG'],
-    ['bft_simpangpait',     'SimpangPait',     'KC_SIMPANG_PAIT'],
-    ['bft_pasekuaro',       'PaseKuaro',       'KC_PASE_KUARO'],
+    ['pic.tanahgrogot',     'KC_TANAH_GROGOT'],
+    ['pic.batukajang',      'KC_BATU_KAJANG'],
+    ['pic.simpangpait',     'KC_SIMPANG_PAIT'],
+    ['pic.pasekuaro',       'KC_PASE_KUARO'],
     // PPU
-    ['bft_penajeimpaser',   'PenajeimPaser',   'KC_PENAJEM_PASER'],
-    ['bft_babuludarat',     'BabuluDarat',     'KC_BABULU_DARAT'],
+    ['pic.penajeimpaser',   'KC_PENAJEM_PASER'],
+    ['pic.babuludarat',     'KC_BABULU_DARAT'],
     // Berau
-    ['bft_tanjungredeb',    'TanjungRedeb',    'KC_TANJUNG_REDEB'],
+    ['pic.tanjungredeb',    'KC_TANJUNG_REDEB'],
     // Tarakan
-    ['bft_tarakanyos',      'TarakanYos',      'KC_TARAKAN_YOS'],
-    ['bft_tarakansimpang',  'TarakanSimpang',  'KC_TARAKAN_SIMPANG'],
+    ['pic.tarakanyos',      'KC_TARAKAN_YOS'],
+    ['pic.tarakansimpang',  'KC_TARAKAN_SIMPANG'],
     // Nunukan & Sebatik
-    ['bft_nunukan',         'Nunukan',         'KC_NUNUKAN'],
-    ['bft_pulausebatik',    'PulauSebatik',    'KC_PULAU_SEBATIK'],
+    ['pic.nunukan',         'KC_NUNUKAN'],
+    ['pic.pulausebatik',    'KC_PULAU_SEBATIK'],
     // Bunyu
-    ['bft_pulaubunyu',      'PulauBunyu',      'KC_PULAU_BUNYU'],
+    ['pic.pulaubunyu',      'KC_PULAU_BUNYU'],
     // Tanjung Selor & Senkawit
-    ['bft_tanjungselor',    'TanjungSelor',    'KC_TANJUNG_SELOR'],
-    ['bft_tanjselsenkawit', 'TanjselSenkawit', 'KC_TANJSEL_SENKAWIT'],
+    ['pic.tanjungselor',    'KC_TANJUNG_SELOR'],
+    ['pic.tanjselsenkawit', 'KC_TANJSEL_SENKAWIT'],
     // Malinau
-    ['bft_malinau',         'Malinau',         'KC_MALINAU'],
+    ['pic.malinau',         'KC_MALINAU'],
   ]
 
-  for (const [username, namePart, branchCode] of salesUsers) {
-    const pw       = await bcrypt.hash(`${namePart.toLowerCase()}123`, 10)
+  for (const [username, branchCode] of salesUsers) {
     const branchId = branchMap[branchCode]
     await prisma.user.create({
       data: {
         username,
-        name:     username.replace(/_/g, ' '),
+        name:     username,
         email:    `${username}@bankmandiri.co.id`,
-        password: pw,
+        password: sharedPw,
         role:     'SALES',
         points:   0,
         branchId,
       },
     })
-    console.log(`  ✓ ${username}  |  pw: ${namePart.toLowerCase()}123`)
+    console.log(`  ✓ ${username}  |  pw: pic123`)
   }
 
   console.log('\n✅ Database seeded successfully!')
   console.log('\n📋 Login Credentials:')
-  console.log('   Admin → username: admin            | password: admin2024')
-  console.log('   Sales → username: BFT_Klandasan    | password: Klandasan123')
-  console.log('   Sales → username: BFT_Suprapto     | password: Suprapto123')
-  console.log('   (27 akun cabang, format password: NamaCabang123)')
+  console.log('   Admin → username: admin               | password: pic123')
+  console.log('   Sales → username: pic.klandasan       | password: pic123')
+  console.log('   Sales → username: pic.suprapto        | password: pic123')
+  console.log('   (27 akun cabang, semua password: pic123)')
 }
 
 main()
